@@ -4,7 +4,7 @@
 cd "$(dirname "$0")/.."
 SP=$(mktemp -d)
 geom() {  # $1 = tipo de ventana (UTILITY = panel, NOTIFICATION = avisos) -> "WxH+X+Y" que las abarca a todas
-  local pids; pids=" $(pgrep -f "tamabot --demo" | tr '\n' ' ') "
+  local pids; pids=" $(pgrep -f "traychi --demo" | tr '\n' ' ') "
   for id in $(xwininfo -root -tree | awk '/^ +0x[0-9a-f]+ /{print $1}'); do
     case "$pids" in *" $(xprop -id "$id" _NET_WM_PID 2>/dev/null | awk '{print $3}') "*) ;; *) continue ;; esac
     xprop -id "$id" _NET_WM_WINDOW_TYPE | grep -q "_NET_WM_WINDOW_TYPE_$1" || continue

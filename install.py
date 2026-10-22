@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Instalador de Tamabot para cualquier distribución Linux.
+"""Instalador de Traychi para cualquier distribución Linux.
 
     python3 install.py                 instala o actualiza
     python3 install.py --uninstall     desinstala (conserva tus datos)
@@ -21,29 +21,31 @@ from pathlib import Path
 
 SRC = Path(__file__).resolve().parent
 HOME = Path.home()
-SHARE = HOME / ".local" / "share" / "tamabot"
+SHARE = HOME / ".local" / "share" / "traychi"
 APP = SHARE / "app"                       # copia instalada del código
 VENV = SHARE / "venv"                     # Python con PySide6 para la app
 SETTINGS = HOME / ".claude" / "settings.json"
-CONFIG_DIR = HOME / ".config" / "tamabot"
+CONFIG_DIR = HOME / ".config" / "traychi"
 CONFIG = CONFIG_DIR / "config.json"
-CACHE_DIR = HOME / ".cache" / "tamabot"
-BIN = HOME / ".local" / "bin" / "tamabot"
-DESKTOP = HOME / ".local" / "share" / "applications" / "tamabot.desktop"
-AUTOSTART = HOME / ".config" / "autostart" / "tamabot.desktop"
-ICON = HOME / ".local" / "share" / "icons" / "hicolor" / "256x256" / "apps" / "tamabot.png"
+CACHE_DIR = HOME / ".cache" / "traychi"
+BIN = HOME / ".local" / "bin" / "traychi"
+DESKTOP = HOME / ".local" / "share" / "applications" / "traychi.desktop"
+AUTOSTART = HOME / ".config" / "autostart" / "traychi.desktop"
+ICON = HOME / ".local" / "share" / "icons" / "hicolor" / "256x256" / "apps" / "traychi.png"
 
 PYSIDE = "PySide6-Essentials>=6.8,<7"
 MIN_PY = (3, 12)                          # PySide6 6.12 falla en Python < 3.12 (bug de refcount de None)
-MARKS = ("tamabot_", "ctray_")            # nuestras entradas en settings.json (ctray_ = Claude Tray, el nombre anterior)
-LEGACY_SHARE = HOME / ".local" / "share" / "claude-tray"
-LEGACY_FILES = [HOME / ".local" / "bin" / "claude-tray",
-                HOME / ".local" / "share" / "applications" / "claude-tray.desktop",
-                HOME / ".config" / "autostart" / "claude-tray.desktop",
-                HOME / ".local" / "share" / "icons" / "hicolor" / "256x256" / "apps" / "claude-tray.png"]
+# nuestras entradas en settings.json: traychi_ y las de los nombres anteriores (Tamabot, Claude Tray)
+MARKS = ("traychi_", "tamabot_", "ctray_")
+OLD_NAMES = ("tamabot", "claude-tray")
+LEGACY_FILES = [f for n in OLD_NAMES for f in (
+    HOME / ".local" / "bin" / n,
+    HOME / ".local" / "share" / "applications" / f"{n}.desktop",
+    HOME / ".config" / "autostart" / f"{n}.desktop",
+    HOME / ".local" / "share" / "icons" / "hicolor" / "256x256" / "apps" / f"{n}.png")]
 ASYNC_EVENTS = ["SessionStart", "SessionEnd", "UserPromptSubmit", "PreToolUse",
                 "PostToolUse", "Notification", "Stop", "StopFailure"]
-COPY = ["tamabot", "hook", "VERSION", "LICENSE", "README.md"]
+COPY = ["traychi", "hook", "VERSION", "LICENSE", "README.md"]
 
 # libreria -> paquete por familia de distro (apt, dnf, pacman, zypper)
 QT_LIBS = {
@@ -148,10 +150,10 @@ def load_settings():
 def save_settings(data):
     if SETTINGS.exists():
         stamp, n = time.strftime("%Y%m%d-%H%M%S"), 0
-        backup = SETTINGS.with_name(f"settings.json.bak-tamabot-{stamp}")
+        backup = SETTINGS.with_name(f"settings.json.bak-traychi-{stamp}")
         while backup.exists():
             n += 1
-            backup = SETTINGS.with_name(f"settings.json.bak-tamabot-{stamp}-{n}")
+            backup = SETTINGS.with_name(f"settings.json.bak-traychi-{stamp}-{n}")
         shutil.copy2(SETTINGS, backup)
         say(f"  respaldo de tus ajustes: {backup}")
     SETTINGS.parent.mkdir(parents=True, exist_ok=True)
@@ -169,7 +171,7 @@ def is_ours(command):
 
 
 def strip_ours(hooks):
-    """Quita las entradas de Tamabot (y de Claude Tray, su nombre anterior) sin tocar las demás."""
+    """Quita las entradas de Traychi (y de Claude Tray, su nombre anterior) sin tocar las demás."""
     for event in list(hooks):
         groups = []
         for group in hooks[event]:
@@ -199,8 +201,8 @@ def save_config(cfg):
 def hook_commands(app_dir):
     py = shutil.which("python3") or "/usr/bin/python3"       # los hooks solo usan la stdlib
     q = shlex.quote
-    hook = f"{q(py)} -I -S {q(str(app_dir / 'hook' / 'tamabot_hook.py'))}"
-    status = f"{q(py)} -I -S {q(str(app_dir / 'hook' / 'tamabot_statusline.py'))}"
+    hook = f"{q(py)} -I -S {q(str(app_dir / 'hook' / 'traychi_hook.py'))}"
+    status = f"{q(py)} -I -S {q(str(app_dir / 'hook' / 'traychi_statusline.py'))}"
     return hook, status
 
 
@@ -253,7 +255,7 @@ def check_system():
     session = os.environ.get("XDG_SESSION_TYPE", "desconocida")
     say(f"  {name} · escritorio {desktop} · sesión {session}")
     if not sys.platform.startswith("linux"):
-        die("Tamabot es para Linux.")
+        die("Traychi es para Linux.")
     if not shutil.which("claude"):
         warn("No encontré el comando «claude» (Claude Code). La app se instala igual y funcionará cuando lo instales.")
 
@@ -274,7 +276,7 @@ def check_system():
         if "appindicator" not in ext.lower():
             warn("GNOME no muestra iconos de bandeja sin la extensión «AppIndicator and KStatusNotifierItem Support».")
             say("    instálala desde https://extensions.gnome.org/extension/615/ (o el paquete gnome-shell-extension-appindicator).")
-            say("    Sin ella la app funciona igual: abre el panel con «tamabot --panel».")
+            say("    Sin ella la app funciona igual: abre el panel con «traychi --panel».")
     return family
 
 
@@ -349,31 +351,31 @@ def check_qt(family):
 
 
 def migrate_legacy():
-    """Si estaba instalado como Claude Tray: mueve tus datos y quita lo antiguo."""
-    old_dirs = {"config": HOME / ".config" / "claude-tray", "cache": HOME / ".cache" / "claude-tray",
-                "data": LEGACY_SHARE}
-    new_dirs = {"config": CONFIG_DIR, "cache": CACHE_DIR, "data": SHARE}
-    found = False
-    for key, old in old_dirs.items():
-        if not old.is_dir():
-            continue
-        found = True
-        new_dirs[key].mkdir(parents=True, exist_ok=True)
-        for f in old.iterdir():
-            if f.is_file() and not (new_dirs[key] / f.name).exists():
-                f.rename(new_dirs[key] / f.name)
-        for sub in ("app", "venv", "app.new"):          # la app antigua se reinstala, no se mueve
-            if (old / sub).is_dir():
-                shutil.rmtree(old / sub)
-        if not any(old.iterdir()):
-            old.rmdir()
+    """Si estaba instalado como Tamabot o Claude Tray: mueve tus datos y quita lo antiguo."""
+    found = []
+    for name in OLD_NAMES:
+        dirs = {CONFIG_DIR: HOME / ".config" / name, CACHE_DIR: HOME / ".cache" / name,
+                SHARE: HOME / ".local" / "share" / name}
+        for new, old in dirs.items():
+            if not old.is_dir():
+                continue
+            found.append(name)
+            new.mkdir(parents=True, exist_ok=True)
+            for f in old.iterdir():
+                if f.is_file() and not (new / f.name).exists():
+                    f.rename(new / f.name)
+            for sub in ("app", "venv", "app.new"):          # la app antigua se reinstala, no se mueve
+                if (old / sub).is_dir():
+                    shutil.rmtree(old / sub)
+            if not any(old.iterdir()):
+                old.rmdir()
     for f in LEGACY_FILES:
         if f.exists():
             f.unlink()
-            found = True
+            found.append(f.name)
     if found:
-        step("Se encontró Claude Tray (el nombre anterior): tus datos pasaron a Tamabot")
-    return found
+        step("Se encontró una instalación con el nombre anterior: tus datos pasaron a Traychi")
+    return bool(found)
 
 
 def copy_app():
@@ -399,15 +401,15 @@ def write_launcher():
     BIN.parent.mkdir(parents=True, exist_ok=True)
     BIN.write_text("#!/bin/sh\n"
                    f"cd {shlex.quote(str(APP))} || exit 1\n"
-                   f"exec {shlex.quote(str(VENV / 'bin' / 'python'))} -m tamabot \"$@\"\n")
+                   f"exec {shlex.quote(str(VENV / 'bin' / 'python'))} -m traychi \"$@\"\n")
     BIN.chmod(0o755)
     ICON.parent.mkdir(parents=True, exist_ok=True)
     if (VENV / "bin" / "python").exists():
         run(str(VENV / "bin" / "python"), "-c",
             "from PySide6.QtGui import QGuiApplication; app = QGuiApplication([]);"
-            f"from tamabot.icon import save_png; save_png({str(ICON)!r})",
+            f"from traychi.icon import save_png; save_png({str(ICON)!r})",
             cwd=APP, env={**os.environ, "QT_QPA_PLATFORM": "offscreen"})
-    entry = ("[Desktop Entry]\nType=Application\nName=Tamabot\n"
+    entry = ("[Desktop Entry]\nType=Application\nName=Traychi\n"
              "Comment=Aprueba solicitudes y sigue tus sesiones de Claude Code desde la bandeja\n"
              f"Exec={BIN}\nIcon={ICON if ICON.exists() else 'utilities-terminal'}\nTerminal=false\n"
              "Categories=Development;Utility;\nStartupNotify=false\nX-KDE-autostart-after=panel\n"
@@ -425,9 +427,9 @@ def write_launcher():
 # --- atajos en GNOME/Wayland (en X11 los registra la app sola) ---------------------------
 GNOME_KEYS = "org.gnome.settings-daemon.plugins.media-keys"
 GNOME_BASE = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/"
-GNOME_SHORTCUTS = {"tamabot-allow": ("Tamabot: permitir", "--allow", "<Super><Shift>a"),
-                   "tamabot-deny": ("Tamabot: rechazar", "--deny", "<Super><Shift>d"),
-                   "tamabot-panel": ("Tamabot: panel", "--panel", "<Super><Shift>c")}
+GNOME_SHORTCUTS = {"traychi-allow": ("Traychi: permitir", "--allow", "<Super><Shift>a"),
+                   "traychi-deny": ("Traychi: rechazar", "--deny", "<Super><Shift>d"),
+                   "traychi-panel": ("Traychi: panel", "--panel", "<Super><Shift>c")}
 
 
 def _gnome_list():
@@ -438,7 +440,7 @@ def _gnome_list():
 def gnome_shortcuts(add=True):
     if not shutil.which("gsettings") or "GNOME" not in os.environ.get("XDG_CURRENT_DESKTOP", "").upper():
         return
-    current = [p for p in _gnome_list() if "tamabot-" not in p and "claude-tray-" not in p]
+    current = [p for p in _gnome_list() if not any(f"{n}-" in p for n in ("traychi",) + OLD_NAMES)]
     if add:
         if os.environ.get("XDG_SESSION_TYPE") != "wayland":
             return                         # en X11 la app los registra sola
@@ -456,10 +458,10 @@ def gnome_shortcuts(add=True):
 
 # --- arranque / parada -------------------------------------------------------------------
 def stop_running():
-    """Detiene Tamabot si esta abierto (tambien una instalacion antigua, desde otra carpeta)."""
+    """Detiene Traychi si esta abierto (tambien una instalacion antigua, desde otra carpeta)."""
     if not shutil.which("pkill"):
         return
-    r = run("pkill", "-u", str(os.getuid()), "-f", r"python[0-9.]* -m (tamabot|claudetray)( |$)")
+    r = run("pkill", "-u", str(os.getuid()), "-f", r"python[0-9.]* -m (traychi|tamabot|claudetray)( |$)")
     if r.returncode == 0:
         time.sleep(1)
 
@@ -468,16 +470,16 @@ def start_app():
     if "--no-start" in sys.argv or not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
         return
     subprocess.Popen([str(BIN)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-    say("  Tamabot está abierto: busca su icono en la bandeja.")
+    say("  Traychi está abierto: busca su icono en la bandeja.")
 
 
 # --- principal ------------------------------------------------------------------------------
 def install():
-    from_src = (SRC / "tamabot" / "app.py").exists()
+    from_src = (SRC / "traychi" / "app.py").exists()
     if not from_src:
-        die("Ejecuta el instalador desde la carpeta del proyecto (la que tiene tamabot/ y hook/).")
+        die("Ejecuta el instalador desde la carpeta del proyecto (la que tiene traychi/ y hook/).")
     version = (SRC / "VERSION").read_text().strip() if (SRC / "VERSION").exists() else "?"
-    say(f"Tamabot {version} · instalador")
+    say(f"Traychi {version} · instalador")
     family = check_system()
     if not ASSUME_YES:
         ans = input("\n¿Continuar con la instalación? [S/n] ").strip().lower()
@@ -496,17 +498,17 @@ def install():
     gnome_shortcuts(add=True)
     if not qt_ok:
         say("\n✓ Instalación completa, pero la app no abrirá hasta instalar lo que falta (ver arriba).")
-        say("  Después de instalarlo, ejecuta «tamabot» (no hace falta reinstalar).")
+        say("  Después de instalarlo, ejecuta «traychi» (no hace falta reinstalar).")
         return
     say("\n✓ Instalación completa.")
-    say("  · Ábrelo desde el menú o con «tamabot». Se abre solo al iniciar sesión.")
+    say("  · Ábrelo desde el menú o con «traychi». Se abre solo al iniciar sesión.")
     say("  · Atajos: Super+Shift+A permitir · Super+Shift+D rechazar · Super+Shift+C panel.")
     say("  · Para desinstalar:  python3 install.py --uninstall")
     start_app()
 
 
 def uninstall():
-    say("Desinstalando Tamabot…")
+    say("Desinstalando Traychi…")
     stop_running()
     remove_hooks()
     gnome_shortcuts(add=False)

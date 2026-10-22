@@ -1,8 +1,8 @@
 import json
 import time
 
-from tamabot import history
-from tamabot.history import History
+from traychi import history
+from traychi.history import History
 
 
 def noon(days_ago=0):

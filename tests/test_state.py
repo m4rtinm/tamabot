@@ -4,8 +4,8 @@ import time
 
 import pytest
 
-from tamabot import state
-from tamabot.state import SessionTracker, Usage, now_ms
+from traychi import state
+from traychi.state import SessionTracker, Usage, now_ms
 
 
 @pytest.fixture

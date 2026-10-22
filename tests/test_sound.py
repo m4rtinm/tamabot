@@ -1,6 +1,6 @@
 import wave
 
-from tamabot import sound
+from traychi import sound
 
 
 def test_todos_los_sonidos_existen_y_son_wav_validos():

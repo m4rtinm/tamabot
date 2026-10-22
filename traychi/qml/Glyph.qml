@@ -1,6 +1,6 @@
 import QtQuick
 
-// Carita de Bit (la mascota) en miniatura: marca de Tamabot en las notificaciones.
+// Carita de Bit (la mascota) en miniatura: marca de Traychi en las notificaciones.
 Item {
     id: g
     property color color: ctrl && ctrl.pet ? ctrl.pet.color : "#D97757"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Status line de Claude Code que ademas reenvia los datos a Tamabot.
+"""Status line de Claude Code que ademas reenvia los datos a Traychi.
 
 Claude Code solo entrega el uso del plan (rate_limits) a la status line,
 asi que este script es la fuente del consumo en tiempo real. Si en la
@@ -14,9 +14,9 @@ import sys
 import time
 
 _XDG = os.environ.get("XDG_RUNTIME_DIR")
-RUNTIME = _XDG if _XDG and os.path.isdir(_XDG) else f"/tmp/tamabot-{os.getuid()}"   # igual que la app
-SOCK = os.path.join(RUNTIME, "tamabot.sock")
-CONFIG = os.path.join(os.path.expanduser("~"), ".config", "tamabot", "config.json")
+RUNTIME = _XDG if _XDG and os.path.isdir(_XDG) else f"/tmp/traychi-{os.getuid()}"   # igual que la app
+SOCK = os.path.join(RUNTIME, "traychi.sock")
+CONFIG = os.path.join(os.path.expanduser("~"), ".config", "traychi", "config.json")
 
 DIM, RESET = "\033[2m", "\033[0m"
 ORANGE, AMBER, RED = "\033[38;5;173m", "\033[38;5;214m", "\033[38;5;203m"

@@ -1,5 +1,5 @@
-from tamabot import hotkeys
-from tamabot.hotkeys import GlobalHotkeys, parse
+from traychi import hotkeys
+from traychi.hotkeys import GlobalHotkeys, parse
 
 
 def test_lee_atajos():

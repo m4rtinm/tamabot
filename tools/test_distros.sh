@@ -31,11 +31,11 @@ for img in $DISTROS; do
     python3 install.py --yes --no-start > /tmp/i2.log 2>&1; code=\$?
     echo \"[2ª instalación: código \$code]\"; grep -E '✓|✗|Qt carga|Qt no puede|falta' /tmp/i2.log | head -4
     if [ \$code = 0 ]; then
-      tamabot --version
+      traychi --version
       export QT_QPA_PLATFORM=offscreen XDG_RUNTIME_DIR=/tmp/rt; mkdir -p -m 700 /tmp/rt
-      timeout 6 tamabot >/tmp/run.log 2>&1; rc=\$?
+      timeout 6 traychi >/tmp/run.log 2>&1; rc=\$?
       [ \$rc = 124 ] && echo '[la app abrió y siguió corriendo 6 s: OK]' || { echo \"[la app terminó con código \$rc]\"; tail -5 /tmp/run.log; }
-      grep -iE 'error|traceback' /root/.cache/tamabot/tamabot.log | head -3
+      grep -iE 'error|traceback' /root/.cache/traychi/traychi.log | head -3
       python3 -c \"import json; d=json.load(open('/root/.claude/settings.json')); print('[hooks:', len(d['hooks']), 'eventos; model conservado:', d.get('model'), ']')\"
       python3 install.py --uninstall >/dev/null && echo '[desinstalación ok]'
     fi

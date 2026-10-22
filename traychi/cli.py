@@ -8,7 +8,7 @@ CONTROL_FLAGS = {"--allow": "allow", "--deny": "deny", "--panel": "panel", "--te
 
 
 def send_control(action):
-    """`tamabot --allow` etc.: le pide la accion a la app abierta por el socket."""
+    """`traychi --allow` etc.: le pide la accion a la app abierta por el socket."""
     try:
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.settimeout(3)
@@ -22,7 +22,7 @@ def send_control(action):
             buf += chunk
         reply = json.loads(buf.split(b"\n")[0] or b"{}")
     except (OSError, ValueError):
-        print("Tamabot no está abierto.")
+        print("Traychi no está abierto.")
         return 2
     print(reply.get("message", ""))
     return 0 if reply.get("ok") else 1
@@ -32,7 +32,7 @@ def handle(argv):
     """Devuelve el codigo de salida si el comando se atendio aqui, o None para abrir la app."""
     if "--version" in argv:
         from . import __version__
-        print(f"Tamabot {__version__}")
+        print(f"Traychi {__version__}")
         return 0
     for flag, action in CONTROL_FLAGS.items():
         if flag in argv:

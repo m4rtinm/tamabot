@@ -1,8 +1,8 @@
 import math
 import struct
 
-from tamabot.glass import color_matrix, rounded_region, tail_region
-from tamabot.listmodel import DictListModel
+from traychi.glass import color_matrix, rounded_region, tail_region
+from traychi.listmodel import DictListModel
 
 
 def area(rects):

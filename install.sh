@@ -1,5 +1,5 @@
 #!/bin/sh
-# Instalador de Tamabot. Uso:  ./install.sh   (o ./install.sh --uninstall)
+# Instalador de Traychi. Uso:  ./install.sh   (o ./install.sh --uninstall)
 cd "$(dirname "$0")" || exit 1
 if ! command -v python3 >/dev/null 2>&1; then
     echo "Hace falta python3 para instalar. Instálalo y vuelve a ejecutar:"

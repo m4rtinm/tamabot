@@ -190,7 +190,7 @@ def _daypart(now):
 
 
 def pet_line(mood, emote, now, *, pending=0, project="", done_project="", working_n=0, usage_5h=-1,
-             streak=0, level=1, hunger=100, energy=100, name="Bit"):
+             streak=0, level=1, hunger=100, energy=100, name="Clawd"):
     """Lo que dice la mascota: frases variadas segun el animo, la hora y tus datos."""
     p, dp = project or "la sesión", done_project or "la sesión"
     part = _daypart(now)

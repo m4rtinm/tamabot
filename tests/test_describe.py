@@ -1,6 +1,6 @@
 import pytest
 
-from tamabot.describe import activity, describe
+from traychi.describe import activity, describe
 
 
 @pytest.mark.parametrize("cmd", [

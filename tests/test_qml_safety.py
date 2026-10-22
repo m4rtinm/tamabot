@@ -3,7 +3,7 @@ interpreta HTML, y el contenido (comandos, rutas, mensajes) viene de afuera."""
 import re
 from pathlib import Path
 
-QML = Path(__file__).resolve().parent.parent / "tamabot" / "qml"
+QML = Path(__file__).resolve().parent.parent / "traychi" / "qml"
 
 
 def text_blocks(src):

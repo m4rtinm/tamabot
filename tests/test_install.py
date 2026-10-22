@@ -31,29 +31,29 @@ def test_instalar_dos_veces_y_desinstalar(tmp_path):
     cmds = {ev: [h["command"] for g in groups for h in g["hooks"]] for ev, groups in data["hooks"].items()}
     assert "/x/mi_hook.sh" in cmds["PreToolUse"]
     for ev in ("PermissionRequest", "Stop", "SessionStart", "StopFailure"):
-        assert sum("tamabot_hook.py" in c for c in cmds[ev]) == 1
+        assert sum("traychi_hook.py" in c for c in cmds[ev]) == 1
     # PreToolUse: uno asincrono para todo + uno sincrono para las preguntas
-    assert sum("tamabot_hook.py" in c for c in cmds["PreToolUse"]) == 2
+    assert sum("traychi_hook.py" in c for c in cmds["PreToolUse"]) == 2
     ask = [g for g in data["hooks"]["PreToolUse"] if g.get("matcher") == "AskUserQuestion"]
     assert ask and ask[0]["hooks"][0]["command"].endswith("--ask") and not ask[0]["hooks"][0].get("async")
-    assert "tamabot_statusline.py" in data["statusLine"]["command"]
-    cfg = json.loads((tmp_path / ".config" / "tamabot" / "config.json").read_text())
+    assert "traychi_statusline.py" in data["statusLine"]["command"]
+    cfg = json.loads((tmp_path / ".config" / "traychi" / "config.json").read_text())
     assert cfg["statusline_chain"] == "/x/mi_status.sh"
-    assert (tmp_path / ".local" / "bin" / "tamabot").exists()
-    assert len(list(settings.parent.glob("settings.json.bak-tamabot-*"))) == 2
+    assert (tmp_path / ".local" / "bin" / "traychi").exists()
+    assert len(list(settings.parent.glob("settings.json.bak-traychi-*"))) == 2
     # la app queda copiada fuera de la carpeta del proyecto, y los hooks apuntan ahi
-    app = tmp_path / ".local" / "share" / "tamabot" / "app"
-    assert (app / "tamabot" / "app.py").exists() and (app / "hook" / "tamabot_hook.py").exists()
-    assert str(app / "hook" / "tamabot_hook.py") in cmds["PermissionRequest"][0]
+    app = tmp_path / ".local" / "share" / "traychi" / "app"
+    assert (app / "traychi" / "app.py").exists() and (app / "hook" / "traychi_hook.py").exists()
+    assert str(app / "hook" / "traychi_hook.py") in cmds["PermissionRequest"][0]
     assert not list(app.rglob("__pycache__"))
 
     run(tmp_path, "--uninstall")
     restored = json.loads(settings.read_text())
     assert restored["hooks"] == ORIGINAL["hooks"] and restored["model"] == "opus"
     assert restored["statusLine"]["command"] == "/x/mi_status.sh"
-    assert not (tmp_path / ".local" / "bin" / "tamabot").exists()
+    assert not (tmp_path / ".local" / "bin" / "traychi").exists()
     assert not app.exists()
-    assert (tmp_path / ".config" / "tamabot").exists()          # sin --purge, tus datos quedan
+    assert (tmp_path / ".config" / "traychi").exists()          # sin --purge, tus datos quedan
 
 
 def test_settings_json_daniado_no_se_toca(tmp_path):
@@ -100,9 +100,27 @@ def test_actualizar_desde_claude_tray(tmp_path):
     cmds = [h["command"] for groups in data["hooks"].values() for g in groups for h in g["hooks"]]
     assert not any("ctray_" in c for c in cmds)                       # hooks antiguos fuera
     assert "/x/mi_hook.sh" in cmds                                     # los tuyos, intactos
-    assert "tamabot_statusline.py" in data["statusLine"]["command"]
-    cfg = json.loads((tmp_path / ".config" / "tamabot" / "config.json").read_text())
+    assert "traychi_statusline.py" in data["statusLine"]["command"]
+    cfg = json.loads((tmp_path / ".config" / "traychi" / "config.json").read_text())
     assert not cfg.get("statusline_chain")                            # la vieja no se encadena consigo misma
-    assert (tmp_path / ".local" / "share" / "tamabot" / "history.jsonl").exists()
+    assert (tmp_path / ".local" / "share" / "traychi" / "history.jsonl").exists()
     assert not (tmp_path / ".local" / "share" / "claude-tray" / "app").exists()
-    assert not old_bin.exists() and (tmp_path / ".local" / "bin" / "tamabot").exists()
+    assert not old_bin.exists() and (tmp_path / ".local" / "bin" / "traychi").exists()
+
+
+def test_actualizar_desde_tamabot(tmp_path):
+    old_hook = "/usr/bin/python3 -I -S /x/.local/share/tamabot/app/hook/tamabot_hook.py"
+    settings = tmp_path / ".claude" / "settings.json"
+    settings.parent.mkdir()
+    settings.write_text(json.dumps({"hooks": {"Stop": [{"hooks": [{"type": "command", "command": old_hook}]}]},
+                                    "statusLine": {"type": "command", "command": "/x/hook/tamabot_statusline.py"}}))
+    (tmp_path / ".local" / "share" / "tamabot").mkdir(parents=True)
+    (tmp_path / ".local" / "share" / "tamabot" / "history.jsonl").write_text('{"ts": 1, "kind": "done"}\n')
+    (tmp_path / ".local" / "bin").mkdir(parents=True)
+    (tmp_path / ".local" / "bin" / "tamabot").write_text("#!/bin/sh\n")
+    run(tmp_path)
+    data = json.loads(settings.read_text())
+    cmds = [h["command"] for groups in data["hooks"].values() for g in groups for h in g["hooks"]]
+    assert not any("tamabot_" in c for c in cmds) and "traychi_statusline.py" in data["statusLine"]["command"]
+    assert (tmp_path / ".local" / "share" / "traychi" / "history.jsonl").exists()
+    assert not (tmp_path / ".local" / "bin" / "tamabot").exists()

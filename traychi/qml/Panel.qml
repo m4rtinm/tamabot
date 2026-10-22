@@ -8,7 +8,7 @@ Window {
     visible: false
     flags: Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     color: "transparent"
-    title: "Tamabot"
+    title: "Traychi"
 
     readonly property int m: 22
     property bool autoHide: true
@@ -489,7 +489,7 @@ Window {
                                 color: T.text3; font.pixelSize: 11
                                 text: ctrl.shortcuts.x11
                                       ? "Por seguridad, «Permitir» nunca aprueba comandos destructivos."
-                                      : "En Wayland, asígnalos en los atajos de tu escritorio con los comandos: tamabot --allow, --deny y --panel."
+                                      : "En Wayland, asígnalos en los atajos de tu escritorio con los comandos: traychi --allow, --deny y --panel."
                             }
                         }
                         Item {

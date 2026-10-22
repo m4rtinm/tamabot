@@ -1,7 +1,7 @@
 """Atajos de teclado globales en X11 (XGrabKey), sin configurar nada en el escritorio.
 
 En Wayland no se pueden capturar teclas globales desde una app: ahi se usan los
-comandos `tamabot --allow` / `--deny` / `--panel`, asignados en los ajustes
+comandos `traychi --allow` / `--deny` / `--panel`, asignados en los ajustes
 de teclado del escritorio.
 """
 import ctypes
@@ -10,7 +10,7 @@ import logging
 import os
 import threading
 
-log = logging.getLogger("tamabot")
+log = logging.getLogger("traychi")
 
 MODS = {"shift": 1, "ctrl": 4, "control": 4, "alt": 8, "super": 64, "meta": 64, "win": 64}
 LOCK, NUMLOCK = 2, 16                 # Bloq Mayús y Bloq Num no deben impedir el atajo
