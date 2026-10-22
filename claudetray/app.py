@@ -41,17 +41,51 @@ MAX_PENDING = 30                   # mas solicitudes abiertas que esto: se devue
 log = logging.getLogger("claude-tray")
 
 
-def kde_dark():
+def _kde_dark():
+    text = (Path.home() / ".config" / "kdeglobals").read_text()
+    block = text.split("[Colors:Window]", 1)[1]
+    for line in block.splitlines()[1:]:
+        if line.startswith("["):
+            break
+        if line.startswith("BackgroundNormal="):
+            r, g, b = (int(v) for v in line.split("=", 1)[1].split(",")[:3])
+            return (0.299 * r + 0.587 * g + 0.114 * b) < 128
+    raise ValueError("sin color de ventana")
+
+
+def _gnome_dark():
+    gs = shutil.which("gsettings")
+    if not gs:
+        raise ValueError("sin gsettings")
+    def get(key):
+        return subprocess.run([gs, "get", "org.gnome.desktop.interface", key], capture_output=True,
+                              text=True, timeout=2).stdout.strip().strip("'")
+    scheme = get("color-scheme")
+    if scheme == "prefer-dark":
+        return True
+    if scheme == "prefer-light":
+        return False
+    theme = get("gtk-theme")
+    if not theme:
+        raise ValueError("sin tema")
+    return "dark" in theme.lower()
+
+
+def system_dark():
+    """Tema claro u oscuro del escritorio: KDE, GNOME (y derivados) o lo que informe Qt."""
+    desktop = os.environ.get("XDG_CURRENT_DESKTOP", "").upper()
+    order = [_kde_dark, _gnome_dark] if "KDE" in desktop else [_gnome_dark, _kde_dark]
+    for probe in order:
+        try:
+            return probe()
+        except (OSError, IndexError, ValueError, subprocess.SubprocessError):
+            continue
     try:
-        text = (Path.home() / ".config" / "kdeglobals").read_text()
-        block = text.split("[Colors:Window]", 1)[1]
-        for line in block.splitlines()[1:]:
-            if line.startswith("["):
-                break
-            if line.startswith("BackgroundNormal="):
-                r, g, b = (int(v) for v in line.split("=", 1)[1].split(",")[:3])
-                return (0.299 * r + 0.587 * g + 0.114 * b) < 128
-    except (OSError, IndexError, ValueError):
+        from PySide6.QtCore import Qt
+        scheme = QGuiApplication.styleHints().colorScheme()
+        if scheme != Qt.ColorScheme.Unknown:
+            return scheme == Qt.ColorScheme.Dark
+    except Exception:
         pass
     return True
 
@@ -128,7 +162,7 @@ class Controller(QObject):
         ctx.setContextProperty("ctrl", self)
         ctx.setContextProperty("sessionModel", self.sessions)
         ctx.setContextProperty("pendingModel", self.pending)
-        ctx.setContextProperty("T", theme(kde_dark()))
+        ctx.setContextProperty("T", theme(system_dark()))
         ctx.setContextProperty("MONO", self._mono_font())
         self.engine.load(QUrl.fromLocalFile(str(QML / "Panel.qml")))
         if not self.engine.rootObjects():
@@ -588,23 +622,25 @@ class Controller(QObject):
         self._publish()
 
     def _ping(self, kind="permission"):
-        """Sonido del aviso, si ese tipo esta activado y la app no esta silenciada."""
-        sounds = {**config.DEFAULTS["sounds"], **(self.cfg.get("sounds") or {})}
-        if not self._muted() and sounds.get(kind):
-            sound.play(kind, self.cfg.get("sound_volume", 70))
+        """Sonido elegido para ese tipo de aviso, salvo que la app este silenciada."""
+        name = self._sounds().get(kind, "")
+        if name and not self._muted():
+            sound.play(name, self.cfg.get("sound_volume", 70))
 
     def _sounds(self):
-        return {**config.DEFAULTS["sounds"], **(self.cfg.get("sounds") or {})}
+        return sound.normalize(self.cfg.get("sounds"))
 
-    @Slot(str, bool)
-    def setSound(self, kind, on):
+    @Slot(str, str)
+    def setSound(self, kind, name):
+        if kind not in sound.DEFAULTS or (name and name not in sound.NAMES):
+            return
         sounds = self._sounds()
-        sounds[kind] = on
+        sounds[kind] = name
         self.cfg["sounds"] = sounds
         config.save(self.cfg)
         self.soundsChanged.emit()
-        if on:
-            sound.play(kind, self.cfg.get("sound_volume", 70))      # se escucha al activarlo
+        if name:
+            sound.play(name, self.cfg.get("sound_volume", 70))      # se escucha al elegirlo
 
     @Slot(int)
     def setSoundVolume(self, volume):
@@ -613,8 +649,8 @@ class Controller(QObject):
         self.soundsChanged.emit()
 
     @Slot(str)
-    def previewSound(self, kind):
-        sound.play(kind, self.cfg.get("sound_volume", 70))
+    def previewSound(self, name):
+        sound.play(name, self.cfg.get("sound_volume", 70))
 
     # --- notificaciones flotantes -------------------------------------------
     def _toast_for_session(self, sid):
@@ -911,6 +947,7 @@ class Controller(QObject):
     sounds = Property("QVariantMap", _sounds, notify=soundsChanged)
     soundVolume = Property(int, lambda self: int(self.cfg.get("sound_volume", 70)), notify=soundsChanged)
     canPlaySound = Property(bool, lambda self: sound.available(), constant=True)
+    soundLibrary = Property("QVariantList", lambda self: [{"key": k, "label": l} for k, l in sound.LIBRARY], constant=True)
     muteLabel = Property(str, _mute_label, notify=mutedChanged)
     petState = Property("QVariantMap", lambda self: self.petstate.view(time.time()), notify=petStateChanged)
     foods = Property("QVariantList", lambda self: [{"key": k, "name": v[2]} for k, v in FOODS.items()], constant=True)
@@ -963,6 +1000,10 @@ def send_control(action):
 
 
 def main():
+    if "--version" in sys.argv:
+        from . import __version__
+        print(f"Claude Tray {__version__}")
+        return 0
     for flag, action in CONTROL_FLAGS.items():
         if flag in sys.argv:
             try:
@@ -974,7 +1015,10 @@ def main():
     os.umask(0o077)                      # todo lo que crea la app queda solo para su dueño
     config.private_dirs()
     setup_logging()
-    os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
+    # xcb (X11, o XWayland en Wayland) permite ubicar las notificaciones donde corresponde.
+    # Si no hay ningun servidor X, Qt elige solo (p. ej. Wayland puro, con posiciones limitadas).
+    if os.environ.get("DISPLAY"):
+        os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
     os.environ.setdefault("QT_QUICK_CONTROLS_STYLE", "Basic")
     QQuickWindow.setDefaultAlphaBuffer(True)
     app = QApplication(sys.argv)
@@ -993,9 +1037,15 @@ def main():
     if another_instance_running(config.SOCKET_PATH):
         print("Claude Tray ya está abierto.")
         return 0
-    if not QSystemTrayIcon.isSystemTrayAvailable():
-        print("Aviso: no se detectó bandeja del sistema.", file=sys.stderr)
+    no_tray = not QSystemTrayIcon.isSystemTrayAvailable()
+    if no_tray:
+        log.warning("No se detectó bandeja del sistema (en GNOME hace falta la extensión AppIndicator).")
     ctrl = Controller(app)
+    if no_tray:      # sin bandeja (p. ej. GNOME sin AppIndicator): explicar como seguir
+        QTimer.singleShot(2500, lambda: ctrl._show_info({
+            "sid": "", "kind": "ask", "title": "No encontré la bandeja del sistema",
+            "body": "Las notificaciones funcionan igual. Abre el panel con «claude-tray --panel». "
+                    "En GNOME, instala la extensión «AppIndicator and KStatusNotifierItem Support»."}))
     if "--bubble" in sys.argv or "--corner" in sys.argv:   # para pruebas: no se guarda
         ctrl._position_override = "bubble" if "--bubble" in sys.argv else "corner"
         ctrl.toastPositionChanged.emit()

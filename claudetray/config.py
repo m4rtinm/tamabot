@@ -30,8 +30,8 @@ DEFAULTS = {
     "toast_position": "corner",
     # Mascota: nombre, color, accesorio (emoji) e icono de la bandeja ("pet" | "glyph").
     "pet": {"name": "Clawd", "color": "#D97757", "accessory": "", "tray": "pet"},
-    # Sonidos por tipo de aviso y volumen (0-100).
-    "sounds": {"permission": True, "question": True, "done": True, "fail": True},
+    # Sonido elegido por tipo de aviso ("" = sin sonido) y volumen (0-100).
+    "sounds": {"permission": "campana", "question": "pregunta", "done": "listo", "fail": "error"},
     "sound_volume": 70,
     # Atajos globales (X11 los registra la app; en Wayland se asignan los comandos en el escritorio).
     "global_shortcuts": True,

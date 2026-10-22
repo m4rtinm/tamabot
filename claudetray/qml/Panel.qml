@@ -351,26 +351,69 @@ Window {
                             }
                         }
                     }
-                        // --- sonidos por tipo de aviso + volumen
-                        Item {
-                            width: parent.width; height: soundFlow.height
+                        // --- sonidos: uno por tipo de aviso, elegible con flechas, y boton para escucharlo
+                        Column {
+                            width: parent.width
+                            spacing: 4
                             visible: ctrl.canPlaySound
-                            Text { textFormat: Text.PlainText; y: 5; text: "Sonidos"; color: T.text2; font.pixelSize: 12 }
-                            Flow {
-                                id: soundFlow
-                                anchors.right: parent.right
-                                width: parent.width - 90
-                                layoutDirection: Qt.RightToLeft
-                                spacing: 6
-                                Repeater {
-                                    model: [["fail", "Error"], ["done", "Terminado"], ["question", "Pregunta"], ["permission", "Permiso"]]
-                                    Rectangle {
-                                        readonly property bool on: !!ctrl.sounds[modelData[0]]
-                                        width: sl.implicitWidth + 18; height: 26; radius: 13
-                                        color: on ? "#33D97757" : sMa.containsMouse ? T.fillHover : "transparent"
-                                        border.width: 1; border.color: on ? "#88D97757" : T.stroke
-                                        Text { textFormat: Text.PlainText; id: sl; anchors.centerIn: parent; text: modelData[1]; color: on ? T.text : T.text3; font.pixelSize: 12 }
-                                        MouseArea { id: sMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ctrl.setSound(modelData[0], !parent.on) }
+                            Text { textFormat: Text.PlainText; text: "Sonidos"; color: T.text2; font.pixelSize: 12 }
+                            Repeater {
+                                model: [["permission", "Cuando pide permiso"], ["question", "Cuando pregunta algo"],
+                                        ["done", "Cuando termina"], ["fail", "Cuando hay un error"]]
+                                Item {
+                                    id: soundRow
+                                    readonly property string kind: modelData[0]
+                                    readonly property string current: ctrl.sounds[kind] || ""
+                                    // posicion en la lista; -1 = sin sonido
+                                    readonly property int idx: {
+                                        for (var i = 0; i < ctrl.soundLibrary.length; i++)
+                                            if (ctrl.soundLibrary[i].key === current) return i
+                                        return -1
+                                    }
+                                    function pick(step) {
+                                        var n = ctrl.soundLibrary.length + 1          // + "sin sonido"
+                                        var next = ((idx + 1 + step) % n + n) % n - 1
+                                        ctrl.setSound(kind, next < 0 ? "" : ctrl.soundLibrary[next].key)
+                                    }
+                                    width: parent.width; height: 30
+                                    Text {
+                                        textFormat: Text.PlainText
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        leftPadding: 8
+                                        text: modelData[1]; color: T.text; font.pixelSize: 12
+                                    }
+                                    Row {
+                                        anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+                                        spacing: 4
+                                        Rectangle {           // selector: ‹ nombre ›
+                                            width: 132; height: 26; radius: 8
+                                            color: T.code; border.width: 1; border.color: T.stroke
+                                            Text {
+                                                textFormat: Text.PlainText
+                                                anchors.centerIn: parent
+                                                text: soundRow.idx < 0 ? "Sin sonido" : ctrl.soundLibrary[soundRow.idx].label
+                                                color: soundRow.idx < 0 ? T.text3 : T.text; font.pixelSize: 12
+                                            }
+                                            Repeater {
+                                                model: [-1, 1]
+                                                Rectangle {
+                                                    x: modelData < 0 ? 2 : parent.width - width - 2
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    width: 22; height: 22; radius: 6
+                                                    color: arrowMa.pressed ? T.fillPress : arrowMa.containsMouse ? T.fillHover : "transparent"
+                                                    Text { textFormat: Text.PlainText; anchors.centerIn: parent; text: modelData < 0 ? "‹" : "›"; color: T.text2; font.pixelSize: 16 }
+                                                    MouseArea { id: arrowMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: soundRow.pick(modelData) }
+                                                }
+                                            }
+                                        }
+                                        Rectangle {           // escuchar
+                                            width: 26; height: 26; radius: 8
+                                            opacity: soundRow.idx < 0 ? 0.35 : 1
+                                            color: playMa.pressed ? T.fillPress : playMa.containsMouse ? T.fillHover : T.fill
+                                            border.width: 1; border.color: T.stroke
+                                            Text { textFormat: Text.PlainText; anchors.centerIn: parent; anchors.horizontalCenterOffset: 1; text: "▶"; color: T.text2; font.pixelSize: 10 }
+                                            MouseArea { id: playMa; anchors.fill: parent; enabled: soundRow.idx >= 0; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ctrl.previewSound(soundRow.current) }
+                                        }
                                     }
                                 }
                             }
@@ -378,7 +421,7 @@ Window {
                         Item {
                             width: parent.width; height: 26
                             visible: ctrl.canPlaySound
-                            Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: "Volumen"; color: T.text2; font.pixelSize: 12 }
+                            Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; leftPadding: 8; text: "Volumen"; color: T.text; font.pixelSize: 12 }
                             Rectangle {               // deslizador de volumen
                                 id: volTrack
                                 anchors { right: volLabel.left; rightMargin: 10; verticalCenter: parent.verticalCenter }
@@ -397,7 +440,7 @@ Window {
                                     function setFrom(mx) { volTrack.value = Math.max(0, Math.min(1, (mx - 8) / volTrack.width)) }
                                     onPressed: (e) => setFrom(e.x)
                                     onPositionChanged: (e) => { if (pressed) setFrom(e.x) }
-                                    onReleased: { ctrl.setSoundVolume(Math.round(volTrack.value * 100)); ctrl.previewSound("done") }
+                                    onReleased: { ctrl.setSoundVolume(Math.round(volTrack.value * 100)); ctrl.previewSound(ctrl.sounds.permission || "campana") }
                                 }
                             }
                             Text { textFormat: Text.PlainText; id: volLabel; anchors { right: parent.right; verticalCenter: parent.verticalCenter }

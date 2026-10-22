@@ -4,7 +4,13 @@ import subprocess
 from pathlib import Path
 
 SOUNDS = Path(__file__).resolve().parent / "sounds"
-KINDS = ("permission", "question", "done", "fail")
+# sonidos disponibles, en el orden en que se recorren en Ajustes
+LIBRARY = [("campana", "Campana"), ("pregunta", "Pregunta"), ("listo", "Listo"), ("error", "Error"),
+           ("gota", "Gota"), ("burbuja", "Burbuja"), ("suave", "Suave"), ("triple", "Triple")]
+# tipo de aviso -> sonido por defecto ("" = sin sonido)
+DEFAULTS = {"permission": "campana", "question": "pregunta", "done": "listo", "fail": "error"}
+KINDS = tuple(DEFAULTS)
+NAMES = {key for key, _ in LIBRARY}
 
 
 def _player(volume):
@@ -23,10 +29,25 @@ def available():
     return _player(100) is not None
 
 
-def play(kind, volume=70):
-    path = SOUNDS / f"{kind}.wav"
+def normalize(choices):
+    """Sonido elegido por tipo de aviso. Acepta el formato antiguo (True/False)."""
+    out = dict(DEFAULTS)
+    for kind, value in (choices or {}).items():
+        if kind not in DEFAULTS:
+            continue
+        if value is True:
+            out[kind] = DEFAULTS[kind]
+        elif value is False or value == "":
+            out[kind] = ""
+        elif value in NAMES:
+            out[kind] = value
+    return out
+
+
+def play(name, volume=70):
+    path = SOUNDS / f"{name}.wav"
     cmd = _player(volume)
-    if cmd is None or not path.exists() or volume <= 0:
+    if not name or cmd is None or not path.exists() or volume <= 0:
         return False
     try:
         subprocess.Popen(cmd + [str(path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
