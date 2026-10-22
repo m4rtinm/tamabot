@@ -979,6 +979,11 @@ def setup_logging():
     root.addHandler(logging.StreamHandler())
     root.setLevel(logging.INFO)
     sys.excepthook = lambda t, v, tb: log.error("Error no controlado:\n%s", "".join(traceback.format_exception(t, v, tb)))
+    # si el proceso se cae a nivel nativo (Qt, Xlib), deja el rastro de Python en el log
+    import faulthandler
+    global _crash_log
+    _crash_log = open(config.CACHE_DIR / "traychi-crash.log", "a", encoding="utf-8")
+    faulthandler.enable(file=_crash_log, all_threads=True)
 
     def qt_messages(mode, ctx, message):
         if "propertyCache" not in message:      # ruido conocido de Qt
@@ -991,6 +996,9 @@ def main():
     config.migrate_legacy()
     config.private_dirs()
     setup_logging()
+    if os.environ.get("DISPLAY"):
+        from . import x11
+        x11.lib()                        # XInitThreads antes de que Qt o nuestros hilos usen Xlib
     # xcb (X11, o XWayland en Wayland) permite ubicar las notificaciones donde corresponde.
     # Si no hay ningun servidor X, Qt elige solo (p. ej. Wayland puro, con posiciones limitadas).
     if os.environ.get("DISPLAY"):

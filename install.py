@@ -399,9 +399,23 @@ def copy_app():
 def write_launcher():
     step("Creando el lanzador, el menú y el autoarranque")
     BIN.parent.mkdir(parents=True, exist_ok=True)
-    BIN.write_text("#!/bin/sh\n"
-                   f"cd {shlex.quote(str(APP))} || exit 1\n"
-                   f"exec {shlex.quote(str(VENV / 'bin' / 'python'))} -m traychi \"$@\"\n")
+    py, log = shlex.quote(str(VENV / "bin" / "python")), shlex.quote(str(CACHE_DIR / "traychi.log"))
+    BIN.write_text(f"""#!/bin/sh
+cd {shlex.quote(str(APP))} || exit 1
+# comandos (--allow, --version, --demo…): una sola vez
+[ $# -gt 0 ] && exec {py} -m traychi "$@"
+# la app: si se cae (fallo nativo o error no controlado) se reinicia, hasta 5 veces cada 10 min.
+# Si se cierra a proposito (Salir = 0, Ctrl+C = 130, kill = 137/143) no se reinicia.
+n=0; t0=$(date +%s)
+while :; do
+    {py} -m traychi; code=$?
+    case $code in 0|130|137|143) exit $code ;; esac
+    now=$(date +%s); [ $((now - t0)) -gt 600 ] && {{ n=0; t0=$now; }}
+    n=$((n + 1)); [ $n -gt 5 ] && exit $code
+    echo "$(date '+%F %T') AVISO Traychi terminó con código $code; se reinicia ($n/5)" >> {log}
+    sleep 2
+done
+""")
     BIN.chmod(0o755)
     ICON.parent.mkdir(parents=True, exist_ok=True)
     if (VENV / "bin" / "python").exists():

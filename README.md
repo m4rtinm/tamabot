@@ -220,7 +220,7 @@ Casi todo se cambia en **Ajustes**. Algunas opciones extra están en `~/.config/
 | No llegan notificaciones | Reinicia tus sesiones de `claude` (cargan los hooks al empezar) y revisa que la app esté abierta. |
 | «traychi: command not found» | Agrega `~/.local/bin` a tu `PATH`; el instalador te avisa si falta. |
 | Un atajo no funciona | En Ajustes › Atajos se ve si otra app ya lo usa; cámbialo en `config.json`. |
-| Algo raro | Revisa `~/.cache/traychi/traychi.log`. |
+| Algo raro, o se cerró sola | Revisa `~/.cache/traychi/traychi.log` y, si se cayó, `traychi-crash.log` (si se cae, se reinicia sola). |
 
 </details>
 

@@ -4,11 +4,12 @@ La region se escribe directamente con libX11: xprop solo acepta 64 valores
 y una region de esquinas redondeadas necesita bastantes mas.
 """
 import ctypes
-import ctypes.util
 import math
 import struct
 
 from PySide6.QtGui import QMatrix4x4
+
+from . import x11
 
 ATOM = b"_KDE_NET_WM_BLUR_BEHIND_REGION"
 CONTRAST_ATOM = b"_KDE_NET_WM_BACKGROUND_CONTRAST_REGION"
@@ -25,10 +26,9 @@ def _init():
     global _x11, _display, _atom, _contrast_atom
     if _display is not None:
         return True
-    path = ctypes.util.find_library("X11")
-    if not path:
+    _x11 = x11.lib()
+    if _x11 is None:
         return False
-    _x11 = ctypes.cdll.LoadLibrary(path)
     _x11.XOpenDisplay.restype = ctypes.c_void_p
     _x11.XOpenDisplay.argtypes = [ctypes.c_char_p]
     _x11.XInternAtom.restype = ctypes.c_ulong

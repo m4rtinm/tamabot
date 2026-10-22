@@ -5,10 +5,11 @@ comandos `traychi --allow` / `--deny` / `--panel`, asignados en los ajustes
 de teclado del escritorio.
 """
 import ctypes
-import ctypes.util
 import logging
 import os
 import threading
+
+from . import x11
 
 log = logging.getLogger("traychi")
 
@@ -70,11 +71,10 @@ class GlobalHotkeys:
         if not is_x11():
             self.failed = {a: "Wayland" for a in self.bindings}
             return False
-        path = ctypes.util.find_library("X11")
-        if not path:
+        x = x11.lib()
+        if x is None:
             self.failed = {a: "sin libX11" for a in self.bindings}
             return False
-        x = ctypes.cdll.LoadLibrary(path)
         x.XOpenDisplay.restype = ctypes.c_void_p
         x.XOpenDisplay.argtypes = [ctypes.c_char_p]
         x.XDefaultRootWindow.restype = ctypes.c_ulong
