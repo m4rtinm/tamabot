@@ -419,8 +419,11 @@ def gnome_shortcuts(add=True):
 
 # --- arranque / parada -------------------------------------------------------------------
 def stop_running():
-    r = run("pkill", "-f", f"{VENV}/bin/python -m claudetray") if shutil.which("pkill") else None
-    if r is not None and r.returncode == 0:
+    """Detiene Claude Tray si esta abierto (tambien una instalacion antigua, desde otra carpeta)."""
+    if not shutil.which("pkill"):
+        return
+    r = run("pkill", "-u", str(os.getuid()), "-f", r"python[0-9.]* -m claudetray( |$)")
+    if r.returncode == 0:
         time.sleep(1)
 
 
