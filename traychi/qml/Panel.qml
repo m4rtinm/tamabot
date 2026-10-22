@@ -251,7 +251,7 @@ Window {
                                 anchors.right: parent.right
                                 spacing: 8
                                 Repeater {
-                                    model: [["clawd", "Clawd", "#D97757"], ["mochi", "Mochila", "#F2EAD8"]]
+                                    model: [["clawd", "Clawd", "#D97757"], ["mochi", "Mochi", "#F2EAD8"]]
                                     Rectangle {
                                         readonly property bool chosen: (ctrl.pet.design || "clawd") === modelData[0]
                                         width: 96; height: 72; radius: 12
