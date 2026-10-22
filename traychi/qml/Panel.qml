@@ -13,6 +13,8 @@ Window {
     readonly property int m: 22
     property bool autoHide: true
     property string view: "main"      // main | pet | settings | history | usage
+    property string lastView: "main"
+    onViewChanged: { if (lastView === "pet" && view !== "pet") ctrl.markUnlocksSeen(); lastView = view }
     property int maxHeight: 680
     property bool anchorBottom: true
     property int anchorEdge: 600
@@ -37,7 +39,10 @@ Window {
     Timer { interval: 1000; running: panel.visible; repeat: true; onTriggered: panel.now = Date.now() }
 
     onActiveChanged: if (!active && visible && autoHide) visible = false
-    onVisibleChanged: if (visible) { now = Date.now(); intro.restart(); syncBlur(); typed = 0; typer.restart() }
+    onVisibleChanged: {
+        if (visible) { now = Date.now(); intro.restart(); syncBlur(); typed = 0; typer.restart() }
+        else if (view === "pet") ctrl.markUnlocksSeen()
+    }
     onHeightChanged: syncBlur()
     function syncBlur() { ctrl.setBlur(panel, m, m, card.width, card.height, card.radius, 0, 0, 0) }
 
@@ -285,63 +290,6 @@ Window {
                                         border.width: ctrl.pet.color === modelData ? 2 : 0
                                         border.color: T.text
                                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: ctrl.setPet("color", modelData) }
-                                    }
-                                }
-                            }
-                        }
-                        Item {
-                            width: parent.width; height: 30
-                            Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: "Accesorio"; color: T.text2; font.pixelSize: 12 }
-                            Row {
-                                anchors { right: parent.right; verticalCenter: parent.verticalCenter }
-                                spacing: 3
-                                Repeater {
-                                    model: ["", "hat", "bow", "glasses", "headphones", "flower", "crown"]
-                                    Rectangle {
-                                        id: accBtn
-                                        readonly property bool locked: ctrl.petState.unlocked.indexOf(modelData) < 0
-                                        width: 32; height: 32; radius: 8
-                                        color: ctrl.pet.accessory === modelData ? T.fillPress : accMa.containsMouse ? T.fillHover : "transparent"
-                                        border.width: ctrl.pet.accessory === modelData ? 1 : 0
-                                        border.color: T.stroke
-                                        Text {
-                                            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
-                                            visible: modelData === ""
-                                            anchors.centerIn: parent; text: "∅"; color: T.text2; font.pixelSize: 15
-                                        }
-                                        Item {         // vista previa: la zona de la cabeza del accesorio
-                                            visible: modelData !== ""
-                                            anchors.centerIn: parent
-                                            width: 26; height: 26
-                                            clip: true
-                                            opacity: accBtn.locked ? 0.3 : 1
-                                            Accessory {
-                                                // caja de cada accesorio en el espacio 100x100: [x, y, ancho, alto]
-                                                readonly property var box: ({ hat: [29, 3, 42, 26], crown: [31, 8, 38, 21],
-                                                    bow: [57, 17, 28, 20], glasses: [13, 43, 74, 12],
-                                                    headphones: [5, 10, 90, 47], flower: [16, 16, 20, 20] })[modelData] || [0, 0, 100, 100]
-                                                readonly property real k: Math.min(24 / box[2], 24 / box[3])
-                                                kind: modelData
-                                                scale: k
-                                                transformOrigin: Item.TopLeft
-                                                x: 13 - (box[0] + box[2] / 2) * k
-                                                y: 13 - (box[1] + box[3] / 2) * k
-                                            }
-                                        }
-                                        Rectangle {    // candado: nivel necesario
-                                            visible: accBtn.locked
-                                            anchors { right: parent.right; bottom: parent.bottom; margins: 1 }
-                                            width: lockTxt.implicitWidth + 6; height: 13; radius: 6
-                                            color: "#CC1C1C1E"
-                                            Text { textFormat: Text.PlainText; id: lockTxt; anchors.centerIn: parent; text: "Nv " + ctrl.petState.unlocks[modelData]; color: "white"; font.pixelSize: 8; font.bold: true }
-                                        }
-                                        MouseArea {
-                                            id: accMa
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            cursorShape: accBtn.locked ? Qt.ForbiddenCursor : Qt.PointingHandCursor
-                                            onClicked: if (!accBtn.locked) ctrl.setPet("accessory", modelData)
-                                        }
                                     }
                                 }
                             }

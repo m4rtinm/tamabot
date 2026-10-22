@@ -20,7 +20,8 @@ def load_demo(ctrl):
     tmp = Path(tempfile.mkdtemp(prefix="traychi-demo-"))
     ctrl.history = History(tmp / "history.jsonl")
     ctrl.petstate = PetState(tmp / "pet-state.json", now=t - 9 * 86400)
-    ctrl.petstate.d.update(hunger=42, energy=76, happy=88, xp=260, updated=t)
+    ctrl.petstate.d.update(hunger=42, energy=76, happy=88, xp=260, updated=t,
+                           level_seen=3, new_unlocks=["headphones"])
     # la demo no lee tus sesiones ni tu consumo reales: todo es de ejemplo
     state.SESSIONS_DIR = tmp / "sessions"
     ctrl.tracker.s.clear()
@@ -86,6 +87,9 @@ def load_demo(ctrl):
                              {"label": "Luxon", "description": "Buen manejo de zonas horarias"}]},
                 {"question": "¿Qué pruebas agrego?", "header": "Tests", "multiSelect": True,
                  "options": [{"label": "Unitarias"}, {"label": "Integración"}, {"label": "E2E"}]}]}})
+    if "--levelup" in sys.argv:       # simula subir al nivel 4 (desbloquea la flor)
+        ctrl.petstate.d["xp"] = 460
+        QTimer.singleShot(1200, ctrl._check_level_up)
     if "--usage" in sys.argv:
         ctrl.panel.setProperty("view", "usage")
     if "--history" in sys.argv:

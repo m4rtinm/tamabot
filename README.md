@@ -110,7 +110,7 @@ Y además: **historial** con buscador de todo lo que aprobaste, rechazaste o res
 
 Vive en el icono de la bandeja y en el panel, y **cambia de ánimo** según lo que pasa: trabaja cuando Claude trabaja, saluda cuando algo te espera, celebra con confeti al terminar una tarea larga, se preocupa si algo falla y se duerme cuando no hay sesiones. Además **te habla**, letra por letra.
 
-Es un pequeño **tamagotchi**: tiene hambre, energía y cariño. Le das de comer, juegas con ella y sube de nivel con tu trabajo, desbloqueando accesorios (sombrero, moño, lentes, audífonos, flor y corona). Elige entre dos diseños, **Clawd** (por defecto) y **Mochi**, y personaliza su nombre y su color.
+Es un pequeño **tamagotchi**: tiene hambre, energía y cariño. Le das de comer, juegas con ella y sube de nivel con tu trabajo: cada nivel lo celebra y desbloquea accesorios (sombrero, moño, lentes, audífonos, flor y corona), que le pones desde su ficha. Elige entre dos diseños, **Clawd** (por defecto) y **Mochi**, y personaliza su nombre y su color.
 
 ## Capturas
 

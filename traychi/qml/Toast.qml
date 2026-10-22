@@ -113,7 +113,7 @@ Window {
             Row {
                 spacing: 7
                 topPadding: 4
-                StatusDot { status: w.item && w.item.kind === "done" ? "done" : "waiting"; width: 8; height: 8; anchors.verticalCenter: parent.verticalCenter }
+                StatusDot { status: w.item && (w.item.kind === "done" || w.item.kind === "levelup") ? "done" : "waiting"; width: 8; height: 8; anchors.verticalCenter: parent.verticalCenter }
                 Text {
                     textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                     text: w.item ? w.item.title : ""; color: T.text; font.pixelSize: 14; font.weight: Font.DemiBold

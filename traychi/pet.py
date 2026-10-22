@@ -22,7 +22,9 @@ UNLOCKS = {"": 1, "hat": 1, "bow": 1, "glasses": 2, "headphones": 3, "flower": 4
 # los accesorios antiguos eran emojis
 LEGACY_ACCESSORIES = {"🎩": "hat", "👑": "crown", "🎀": "bow", "🕶️": "glasses", "🎧": "headphones", "🌸": "flower"}
 
-TRANSIENT_SECONDS = {"eat": 2.4, "play": 2.4, "love": 2.6}
+TRANSIENT_SECONDS = {"eat": 2.4, "play": 2.4, "love": 2.6, "levelup": 4.0}
+ACCESSORY_NAMES = {"hat": "el sombrero", "bow": "el moño", "glasses": "los lentes",
+                   "headphones": "los audífonos", "flower": "la flor", "crown": "la corona"}
 MAX_CATCHUP_HOURS = 48     # si la app estuvo cerrada, no castigar mas que esto
 
 
@@ -48,6 +50,8 @@ class PetState:
             self.d.update(json.loads(self.path.read_text()))
         except (OSError, ValueError):
             pass
+        self.d.setdefault("level_seen", level_for(self.d["xp"]))
+        self.d.setdefault("new_unlocks", [])    # accesorios desbloqueados que aun no viste en la ficha
         self.transient = ("", 0.0)      # (accion, hasta cuando)
         self._saved_at = 0.0
 
@@ -122,6 +126,23 @@ class PetState:
         return True, phrases[int(now) % len(phrases)]
 
     # --- eventos de las sesiones -----------------------------------------------------
+    def check_level_up(self, now):
+        """Si subio de nivel desde el ultimo aviso: (nivel, accesorios nuevos); si no, None."""
+        lvl = self.level
+        if lvl <= self.d["level_seen"]:
+            return None
+        new = [a for a, need in UNLOCKS.items() if a and self.d["level_seen"] < need <= lvl]
+        self.d["level_seen"] = lvl
+        self.d["new_unlocks"] = list(dict.fromkeys(self.d["new_unlocks"] + new))
+        self._start("levelup", now)
+        self.save(now)
+        return lvl, new
+
+    def mark_unlocks_seen(self, now=None):
+        if self.d["new_unlocks"]:
+            self.d["new_unlocks"] = []
+            self.save(now)
+
     def on_done(self, long_task=False):
         self.d["xp"] += 25 if long_task else 10
         self.d["energy"] = clamp(self.d["energy"] - 3)
@@ -144,7 +165,7 @@ class PetState:
             "hunger": round(self.d["hunger"]), "energy": round(self.d["energy"]), "happy": round(self.d["happy"]),
             "xp": self.d["xp"], "level": lvl, "progress": (self.d["xp"] - lo) / (hi - lo),
             "toNext": hi - self.d["xp"], "ageDays": int((now - self.d["born"]) // 86400),
-            "unlocked": self.unlocked(), "unlocks": dict(UNLOCKS),
+            "unlocked": self.unlocked(), "unlocks": dict(UNLOCKS), "newUnlocks": list(self.d["new_unlocks"]),
         }
 
 
@@ -157,6 +178,8 @@ def compute_mood(now, pet, *, sessions=0, working=0, thinking_only=False, waitin
         return "eat", "food"
     if t == "play":
         return "play", "sparkle"
+    if t == "levelup":
+        return "celebrate", "confetti"
     if t == "love":
         return "love", "heart"
     if waiting or pending:
@@ -273,3 +296,12 @@ REACTIONS = {
 
 def reaction(kind, now, project=""):
     return _pick(REACTIONS.get(kind, []), now, period=1).replace("{p}", project or "la sesión")
+
+
+def level_up_line(level, new, name="Clawd"):
+    """Lo que dice la mascota al subir de nivel."""
+    if new:
+        items = [ACCESSORY_NAMES.get(a, a) for a in new]
+        joined = items[0] if len(items) == 1 else ", ".join(items[:-1]) + " y " + items[-1]
+        return f"¡Nivel {level}! Desbloqueé {joined}. Pruébalo en mi ficha."
+    return f"¡Subí al nivel {level}! Gracias por cuidarme."

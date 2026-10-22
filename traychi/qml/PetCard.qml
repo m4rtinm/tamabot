@@ -83,6 +83,90 @@ Column {
         Chip { visible: pc.hs.streak > 0; text: "racha de " + pc.hs.streak + (pc.hs.streak === 1 ? " día" : " días") }
     }
 
+    // --- accesorios: se desbloquean subiendo de nivel; un clic se lo pone, otro se lo saca
+    Text {
+        textFormat: Text.PlainText
+        text: "ACCESORIOS"
+        color: T.text2; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 0.5
+        leftPadding: 2
+    }
+    Flow {
+        width: parent.width
+        spacing: 8
+        Repeater {
+            model: ["hat", "bow", "glasses", "headphones", "flower", "crown"]
+            Rectangle {
+                id: accBtn
+                readonly property bool locked: pc.st.unlocked.indexOf(modelData) < 0
+                readonly property bool isNew: (pc.st.newUnlocks || []).indexOf(modelData) >= 0
+                readonly property bool worn: ctrl.pet.accessory === modelData
+                width: (pc.width - 5 * 8) / 6; height: width
+                radius: 12
+                color: worn ? "#2626A96E" : accMa.containsMouse && !locked ? T.fillHover : T.fill
+                border.width: worn || isNew ? 1.5 : 1
+                border.color: worn ? "#8826A96E" : isNew ? "#FFD60A" : T.stroke
+                Item {             // vista previa centrada segun el tamaño de cada accesorio
+                    anchors.centerIn: parent
+                    width: parent.width - 12; height: width
+                    clip: true
+                    opacity: accBtn.locked ? 0.28 : 1
+                    Accessory {
+                        readonly property var box: ({ hat: [29, 3, 42, 26], crown: [31, 8, 38, 21],
+                            bow: [57, 17, 28, 20], glasses: [13, 43, 74, 12],
+                            headphones: [5, 10, 90, 47], flower: [16, 16, 20, 20] })[modelData]
+                        readonly property real k: Math.min(parent.width / box[2], parent.height / box[3]) * 0.9
+                        kind: modelData
+                        scale: k
+                        transformOrigin: Item.TopLeft
+                        x: parent.width / 2 - (box[0] + box[2] / 2) * k
+                        y: parent.height / 2 - (box[1] + box[3] / 2) * k
+                    }
+                }
+                Rectangle {        // candado: nivel necesario
+                    visible: accBtn.locked
+                    anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 4 }
+                    width: lockTxt.implicitWidth + 10; height: 15; radius: 7
+                    color: "#CC1C1C1E"
+                    Text { textFormat: Text.PlainText; id: lockTxt; anchors.centerIn: parent; text: "Nv " + pc.st.unlocks[modelData]; color: "white"; font.pixelSize: 9; font.bold: true }
+                }
+                Rectangle {        // recien desbloqueado
+                    visible: accBtn.isNew
+                    anchors { right: parent.right; top: parent.top; margins: -5 }
+                    width: newTxt.implicitWidth + 10; height: 16; radius: 8
+                    color: "#FFD60A"
+                    Text { textFormat: Text.PlainText; id: newTxt; anchors.centerIn: parent; text: "Nuevo"; color: "black"; font.pixelSize: 9; font.bold: true }
+                    SequentialAnimation on scale {
+                        running: accBtn.isNew; loops: Animation.Infinite
+                        NumberAnimation { to: 1.12; duration: 500; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 1.0; duration: 500; easing.type: Easing.InOutSine }
+                    }
+                }
+                MouseArea {
+                    id: accMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: accBtn.locked ? Qt.ForbiddenCursor : Qt.PointingHandCursor
+                    onClicked: if (!accBtn.locked) ctrl.setPet("accessory", accBtn.worn ? "" : modelData)
+                }
+            }
+        }
+    }
+    Text {
+        textFormat: Text.PlainText
+        width: parent.width
+        leftPadding: 2
+        wrapMode: Text.Wrap
+        color: T.text3; font.pixelSize: 11
+        text: {
+            var next = null, names = { hat: "el sombrero", bow: "el moño", glasses: "los lentes",
+                                       headphones: "los audífonos", flower: "la flor", crown: "la corona" }
+            for (var k in pc.st.unlocks)
+                if (k && pc.st.unlocked.indexOf(k) < 0 && (!next || pc.st.unlocks[k] < pc.st.unlocks[next])) next = k
+            return next ? "Próximo: " + names[next] + " en el nivel " + pc.st.unlocks[next] + " · un clic para ponerlo o sacarlo"
+                        : "¡Tienes todos los accesorios! · un clic para ponerlo o sacarlo"
+        }
+    }
+
     // --- acciones
     Text {
         textFormat: Text.PlainText   // nunca interpretar HTML del contenido

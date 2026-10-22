@@ -126,3 +126,32 @@ def test_reacciones():
     assert reaction("prompt", T0, "api")
     assert "{p}" not in reaction("start", T0, "api")
     assert reaction("nada", T0) == ""
+
+
+def test_subir_de_nivel_desbloquea_y_avisa_una_vez(pet):
+    from traychi.pet import level_up_line
+    assert pet.check_level_up(T0) is None                 # nivel 1 de partida: nada que anunciar
+    pet.d["xp"] = 50                                       # nivel 2: lentes
+    assert pet.check_level_up(T0) == (2, ["glasses"])
+    assert pet.d["new_unlocks"] == ["glasses"] and pet.active_transient(T0 + 1) == "levelup"
+    assert pet.check_level_up(T0) is None                 # no se repite
+    pet.d["xp"] = 800                                      # salta al 5: audífonos, flor y corona
+    lvl, new = pet.check_level_up(T0)
+    assert lvl == 5 and new == ["headphones", "flower", "crown"]
+    assert level_up_line(lvl, new) == "¡Nivel 5! Desbloqueé los audífonos, la flor y la corona. Pruébalo en mi ficha."
+    pet.mark_unlocks_seen(T0)
+    assert pet.view(T0)["newUnlocks"] == []
+
+
+def test_mascota_existente_no_recibe_avisos_viejos(tmp_path):
+    import json
+    p = tmp_path / "pet.json"
+    p.write_text(json.dumps({"xp": 500, "born": T0}))     # sin level_seen: estado de versiones anteriores
+    old = PetState(p, now=T0)
+    assert old.check_level_up(T0) is None
+
+
+def test_subir_de_nivel_celebra(pet):
+    pet.d["xp"] = 50
+    pet.check_level_up(T0)
+    assert mood(pet, sessions=1, pending=1) == ("celebrate", "confetti")

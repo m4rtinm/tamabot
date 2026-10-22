@@ -21,7 +21,7 @@ from .bridge import Bridge, another_instance_running
 from .describe import describe
 from .history import History
 from .usagehist import DailyUsage
-from .pet import FOODS, LEGACY_ACCESSORIES, PetState, compute_mood, pet_line, reaction
+from .pet import FOODS, LEGACY_ACCESSORIES, PetState, compute_mood, level_up_line, pet_line, reaction
 from .icon import DESIGN_COLORS, pet_icon, tray_icon
 from .listmodel import DictListModel
 from .state import SessionTracker, Usage, now_ms
@@ -428,6 +428,28 @@ class Controller(QObject):
         self.petStateChanged.emit()
         self.summaryChanged.emit()
         self._tray_frame(force=True)
+        self._check_level_up()
+
+    def _check_level_up(self):
+        """Si la mascota subio de nivel: lo celebra, lo dice y avisa (una vez por nivel)."""
+        up = self.petstate.check_level_up(time.time())
+        if not up:
+            return
+        level, new = up
+        name = self._pet()["name"]
+        line = level_up_line(level, new, name)
+        self._say = (line, time.time() + 7, "action")
+        self.petStateChanged.emit()
+        self.summaryChanged.emit()
+        self._tray_frame(force=True)
+        if not self._muted():
+            self._show_info({"sid": "", "kind": "levelup", "title": f"{name} subió al nivel {level}", "body": line})
+            self._ping("done")
+
+    @Slot()
+    def markUnlocksSeen(self):
+        self.petstate.mark_unlocks_seen()
+        self.petStateChanged.emit()
 
     def _react(self, kind, project=""):
         """La mascota comenta lo que acaba de pasar (aprobar, rechazar, nueva sesion…)."""
@@ -484,6 +506,7 @@ class Controller(QObject):
                 self._last_done = (time.time(), sess.get("project", ""), long_task)
                 self.petstate.on_done(long_task)
                 self.petStateChanged.emit()
+                self._check_level_up()
                 self.history.add("done", sid=data.get("session_id"), project=sess.get("project", ""))
                 self.historyChanged.emit()
             ev = data.get("hook_event_name")
@@ -600,6 +623,7 @@ class Controller(QObject):
         if outcome in ("allow", "always"):
             self.petstate.on_approval()
             self.petStateChanged.emit()
+            self._check_level_up()
         if outcome in ("allow", "always", "deny", "answered"):
             self._react(outcome, item["project"])
         if reply:
