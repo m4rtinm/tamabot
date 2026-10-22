@@ -15,7 +15,7 @@ from PySide6.QtQml import QQmlApplicationEngine, QQmlComponent
 from PySide6.QtQuick import QQuickWindow
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
-from . import config, focus, glass, workarea
+from . import config, focus, glass, sound, workarea
 from .bridge import Bridge, another_instance_running
 from .describe import describe
 from .history import History
@@ -38,7 +38,6 @@ XCB_TYPE_NOTIFICATION = 0x000800   # QXcbWindow::Notification
 XCB_TYPE_POPUP_MENU = 0x000200
 MAX_PENDING = 30                   # mas solicitudes abiertas que esto: se devuelven a la terminal
 log = logging.getLogger("claude-tray")
-SOUND = "/usr/share/sounds/freedesktop/stereo/message-new-instant.oga"
 
 
 def kde_dark():
@@ -83,6 +82,7 @@ class Controller(QObject):
     toastPositionChanged = Signal()
     petChanged = Signal()
     mutedChanged = Signal()
+    soundsChanged = Signal()
     historyChanged = Signal()
     petStateChanged = Signal()
     dailyChanged = Signal()
@@ -444,6 +444,9 @@ class Controller(QObject):
                 self._react("prompt", sess_now.get("project", ""))
             if ev == "StopFailure":
                 self._last_fail = time.time()
+                self._ping("fail")
+            elif ev == "Stop":
+                self._ping("done")
             if ev in ("UserPromptSubmit", "Stop", "SessionEnd", "StopFailure"):
                 self._drop_session_requests(data.get("session_id"))
             elif ev == "PostToolUse":       # la herramienta ya corrio: se aprobo en la terminal
@@ -486,7 +489,7 @@ class Controller(QObject):
         self._publish()
         if not self._muted():          # silenciado: la solicitud queda solo en el panel
             self._show_toast(item, "permission")
-        self._ping()
+        self._ping("permission")
 
     def _new_question(self, cid, data):
         """AskUserQuestion: Claude pregunta con opciones y la respuesta se elige en la app."""
@@ -511,7 +514,7 @@ class Controller(QObject):
         self._publish()
         if not self._muted():
             self._show_toast(item, "question")
-        self._ping()
+        self._ping("question")
 
     def _on_closed(self, cid):
         req = self._req.get(cid)
@@ -571,12 +574,34 @@ class Controller(QObject):
         self.petStateChanged.emit()
         self._publish()
 
-    def _ping(self):
-        if self._muted():
-            return
-        player = shutil.which("paplay")
-        if player and os.path.exists(SOUND):
-            subprocess.Popen([player, SOUND], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    def _ping(self, kind="permission"):
+        """Sonido del aviso, si ese tipo esta activado y la app no esta silenciada."""
+        sounds = {**config.DEFAULTS["sounds"], **(self.cfg.get("sounds") or {})}
+        if not self._muted() and sounds.get(kind):
+            sound.play(kind, self.cfg.get("sound_volume", 70))
+
+    def _sounds(self):
+        return {**config.DEFAULTS["sounds"], **(self.cfg.get("sounds") or {})}
+
+    @Slot(str, bool)
+    def setSound(self, kind, on):
+        sounds = self._sounds()
+        sounds[kind] = on
+        self.cfg["sounds"] = sounds
+        config.save(self.cfg)
+        self.soundsChanged.emit()
+        if on:
+            sound.play(kind, self.cfg.get("sound_volume", 70))      # se escucha al activarlo
+
+    @Slot(int)
+    def setSoundVolume(self, volume):
+        self.cfg["sound_volume"] = max(0, min(100, int(volume)))
+        config.save(self.cfg)
+        self.soundsChanged.emit()
+
+    @Slot(str)
+    def previewSound(self, kind):
+        sound.play(kind, self.cfg.get("sound_volume", 70))
 
     # --- notificaciones flotantes -------------------------------------------
     def _toast_for_session(self, sid):
@@ -823,6 +848,9 @@ class Controller(QObject):
     toastPosition = Property(str, _toast_position, notify=toastPositionChanged)
     pet = Property("QVariantMap", _pet, notify=petChanged)
     muted = Property(bool, _muted, notify=mutedChanged)
+    sounds = Property("QVariantMap", _sounds, notify=soundsChanged)
+    soundVolume = Property(int, lambda self: int(self.cfg.get("sound_volume", 70)), notify=soundsChanged)
+    canPlaySound = Property(bool, lambda self: sound.available(), constant=True)
     muteLabel = Property(str, _mute_label, notify=mutedChanged)
     petState = Property("QVariantMap", lambda self: self.petstate.view(time.time()), notify=petStateChanged)
     foods = Property("QVariantList", lambda self: [{"key": k, "name": v[2]} for k, v in FOODS.items()], constant=True)

@@ -351,6 +351,59 @@ Window {
                             }
                         }
                     }
+                        // --- sonidos por tipo de aviso + volumen
+                        Item {
+                            width: parent.width; height: soundFlow.height
+                            visible: ctrl.canPlaySound
+                            Text { textFormat: Text.PlainText; y: 5; text: "Sonidos"; color: T.text2; font.pixelSize: 12 }
+                            Flow {
+                                id: soundFlow
+                                anchors.right: parent.right
+                                width: parent.width - 90
+                                layoutDirection: Qt.RightToLeft
+                                spacing: 6
+                                Repeater {
+                                    model: [["fail", "Error"], ["done", "Terminado"], ["question", "Pregunta"], ["permission", "Permiso"]]
+                                    Rectangle {
+                                        readonly property bool on: !!ctrl.sounds[modelData[0]]
+                                        width: sl.implicitWidth + 18; height: 26; radius: 13
+                                        color: on ? "#33D97757" : sMa.containsMouse ? T.fillHover : "transparent"
+                                        border.width: 1; border.color: on ? "#88D97757" : T.stroke
+                                        Text { textFormat: Text.PlainText; id: sl; anchors.centerIn: parent; text: modelData[1]; color: on ? T.text : T.text3; font.pixelSize: 12 }
+                                        MouseArea { id: sMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ctrl.setSound(modelData[0], !parent.on) }
+                                    }
+                                }
+                            }
+                        }
+                        Item {
+                            width: parent.width; height: 26
+                            visible: ctrl.canPlaySound
+                            Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: "Volumen"; color: T.text2; font.pixelSize: 12 }
+                            Rectangle {               // deslizador de volumen
+                                id: volTrack
+                                anchors { right: volLabel.left; rightMargin: 10; verticalCenter: parent.verticalCenter }
+                                width: 170; height: 6; radius: 3
+                                color: T.fill
+                                property real value: ctrl.soundVolume / 100
+                                Rectangle { width: parent.width * parent.value; height: parent.height; radius: 3; color: "#D97757" }
+                                Rectangle {
+                                    x: volTrack.width * volTrack.value - width / 2; anchors.verticalCenter: parent.verticalCenter
+                                    width: 16; height: 16; radius: 8
+                                    color: "white"; border.width: 1; border.color: T.stroke
+                                }
+                                MouseArea {
+                                    anchors.fill: parent; anchors.margins: -8
+                                    cursorShape: Qt.PointingHandCursor
+                                    function setFrom(mx) { volTrack.value = Math.max(0, Math.min(1, (mx - 8) / volTrack.width)) }
+                                    onPressed: (e) => setFrom(e.x)
+                                    onPositionChanged: (e) => { if (pressed) setFrom(e.x) }
+                                    onReleased: { ctrl.setSoundVolume(Math.round(volTrack.value * 100)); ctrl.previewSound("done") }
+                                }
+                            }
+                            Text { textFormat: Text.PlainText; id: volLabel; anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+                                   text: Math.round(volTrack.value * 100) + " %"; width: 38; horizontalAlignment: Text.AlignRight
+                                   color: T.text2; font.pixelSize: 12 }
+                        }
                         Item {
                             width: parent.width; height: 28
                             Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: "Icono de la bandeja"; color: T.text2; font.pixelSize: 12 }

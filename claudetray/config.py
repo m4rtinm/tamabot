@@ -30,6 +30,9 @@ DEFAULTS = {
     "toast_position": "corner",
     # Mascota: nombre, color, accesorio (emoji) e icono de la bandeja ("pet" | "glyph").
     "pet": {"name": "Clawd", "color": "#D97757", "accessory": "", "tray": "pet"},
+    # Sonidos por tipo de aviso y volumen (0-100).
+    "sounds": {"permission": True, "question": True, "done": True, "fail": True},
+    "sound_volume": 70,
     # Silencio: 0 = avisos activos, -1 = indefinido, o epoch hasta cuando.
     "muted_until": 0,
     # Comando de status line previo, para encadenarlo.
