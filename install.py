@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Instalador de Claude Tray para cualquier distribución Linux.
+"""Instalador de Tamabot para cualquier distribución Linux.
 
     python3 install.py                 instala o actualiza
     python3 install.py --uninstall     desinstala (conserva tus datos)
@@ -21,24 +21,29 @@ from pathlib import Path
 
 SRC = Path(__file__).resolve().parent
 HOME = Path.home()
-SHARE = HOME / ".local" / "share" / "claude-tray"
+SHARE = HOME / ".local" / "share" / "tamabot"
 APP = SHARE / "app"                       # copia instalada del código
 VENV = SHARE / "venv"                     # Python con PySide6 para la app
 SETTINGS = HOME / ".claude" / "settings.json"
-CONFIG_DIR = HOME / ".config" / "claude-tray"
+CONFIG_DIR = HOME / ".config" / "tamabot"
 CONFIG = CONFIG_DIR / "config.json"
-CACHE_DIR = HOME / ".cache" / "claude-tray"
-BIN = HOME / ".local" / "bin" / "claude-tray"
-DESKTOP = HOME / ".local" / "share" / "applications" / "claude-tray.desktop"
-AUTOSTART = HOME / ".config" / "autostart" / "claude-tray.desktop"
-ICON = HOME / ".local" / "share" / "icons" / "hicolor" / "256x256" / "apps" / "claude-tray.png"
+CACHE_DIR = HOME / ".cache" / "tamabot"
+BIN = HOME / ".local" / "bin" / "tamabot"
+DESKTOP = HOME / ".local" / "share" / "applications" / "tamabot.desktop"
+AUTOSTART = HOME / ".config" / "autostart" / "tamabot.desktop"
+ICON = HOME / ".local" / "share" / "icons" / "hicolor" / "256x256" / "apps" / "tamabot.png"
 
 PYSIDE = "PySide6-Essentials>=6.8,<7"
 MIN_PY = (3, 12)                          # PySide6 6.12 falla en Python < 3.12 (bug de refcount de None)
-MARK = "ctray_"                           # identifica nuestras entradas en settings.json
+MARKS = ("tamabot_", "ctray_")            # nuestras entradas en settings.json (ctray_ = Claude Tray, el nombre anterior)
+LEGACY_SHARE = HOME / ".local" / "share" / "claude-tray"
+LEGACY_FILES = [HOME / ".local" / "bin" / "claude-tray",
+                HOME / ".local" / "share" / "applications" / "claude-tray.desktop",
+                HOME / ".config" / "autostart" / "claude-tray.desktop",
+                HOME / ".local" / "share" / "icons" / "hicolor" / "256x256" / "apps" / "claude-tray.png"]
 ASYNC_EVENTS = ["SessionStart", "SessionEnd", "UserPromptSubmit", "PreToolUse",
                 "PostToolUse", "Notification", "Stop", "StopFailure"]
-COPY = ["claudetray", "hook", "VERSION", "LICENSE", "README.md"]
+COPY = ["tamabot", "hook", "VERSION", "LICENSE", "README.md"]
 
 # libreria -> paquete por familia de distro (apt, dnf, pacman, zypper)
 QT_LIBS = {
@@ -143,10 +148,10 @@ def load_settings():
 def save_settings(data):
     if SETTINGS.exists():
         stamp, n = time.strftime("%Y%m%d-%H%M%S"), 0
-        backup = SETTINGS.with_name(f"settings.json.bak-claude-tray-{stamp}")
+        backup = SETTINGS.with_name(f"settings.json.bak-tamabot-{stamp}")
         while backup.exists():
             n += 1
-            backup = SETTINGS.with_name(f"settings.json.bak-claude-tray-{stamp}-{n}")
+            backup = SETTINGS.with_name(f"settings.json.bak-tamabot-{stamp}-{n}")
         shutil.copy2(SETTINGS, backup)
         say(f"  respaldo de tus ajustes: {backup}")
     SETTINGS.parent.mkdir(parents=True, exist_ok=True)
@@ -159,12 +164,16 @@ def save_settings(data):
     os.replace(tmp, SETTINGS)
 
 
+def is_ours(command):
+    return any(m in (command or "") for m in MARKS)
+
+
 def strip_ours(hooks):
-    """Quita las entradas de Claude Tray sin tocar las demás."""
+    """Quita las entradas de Tamabot (y de Claude Tray, su nombre anterior) sin tocar las demás."""
     for event in list(hooks):
         groups = []
         for group in hooks[event]:
-            kept = [h for h in group.get("hooks", []) if MARK not in h.get("command", "")]
+            kept = [h for h in group.get("hooks", []) if not is_ours(h.get("command", ""))]
             if kept:
                 groups.append({**group, "hooks": kept})
         if groups:
@@ -190,8 +199,8 @@ def save_config(cfg):
 def hook_commands(app_dir):
     py = shutil.which("python3") or "/usr/bin/python3"       # los hooks solo usan la stdlib
     q = shlex.quote
-    hook = f"{q(py)} -I -S {q(str(app_dir / 'hook' / 'ctray_hook.py'))}"
-    status = f"{q(py)} -I -S {q(str(app_dir / 'hook' / 'ctray_statusline.py'))}"
+    hook = f"{q(py)} -I -S {q(str(app_dir / 'hook' / 'tamabot_hook.py'))}"
+    status = f"{q(py)} -I -S {q(str(app_dir / 'hook' / 'tamabot_statusline.py'))}"
     return hook, status
 
 
@@ -210,7 +219,7 @@ def install_hooks(app_dir):
     data["hooks"] = hooks
     cfg = load_config()
     current = data.get("statusLine")
-    if current and MARK not in current.get("command", ""):
+    if current and not is_ours(current.get("command", "")):
         cfg["statusline_chain"] = current.get("command")
         say(f"  tu status line actual se sigue mostrando: {cfg['statusline_chain']}")
     data["statusLine"] = {"type": "command", "command": status, "padding": 0}
@@ -227,7 +236,7 @@ def remove_hooks():
         data["hooks"] = strip_ours(data["hooks"])
         if not data["hooks"]:
             del data["hooks"]
-    if MARK in (data.get("statusLine") or {}).get("command", ""):
+    if is_ours((data.get("statusLine") or {}).get("command", "")):
         chain = load_config().get("statusline_chain")
         if chain:
             data["statusLine"] = {"type": "command", "command": chain}
@@ -244,7 +253,7 @@ def check_system():
     session = os.environ.get("XDG_SESSION_TYPE", "desconocida")
     say(f"  {name} · escritorio {desktop} · sesión {session}")
     if not sys.platform.startswith("linux"):
-        die("Claude Tray es para Linux.")
+        die("Tamabot es para Linux.")
     if not shutil.which("claude"):
         warn("No encontré el comando «claude» (Claude Code). La app se instala igual y funcionará cuando lo instales.")
 
@@ -265,7 +274,7 @@ def check_system():
         if "appindicator" not in ext.lower():
             warn("GNOME no muestra iconos de bandeja sin la extensión «AppIndicator and KStatusNotifierItem Support».")
             say("    instálala desde https://extensions.gnome.org/extension/615/ (o el paquete gnome-shell-extension-appindicator).")
-            say("    Sin ella la app funciona igual: abre el panel con «claude-tray --panel».")
+            say("    Sin ella la app funciona igual: abre el panel con «tamabot --panel».")
     return family
 
 
@@ -339,6 +348,34 @@ def check_qt(family):
     return False
 
 
+def migrate_legacy():
+    """Si estaba instalado como Claude Tray: mueve tus datos y quita lo antiguo."""
+    old_dirs = {"config": HOME / ".config" / "claude-tray", "cache": HOME / ".cache" / "claude-tray",
+                "data": LEGACY_SHARE}
+    new_dirs = {"config": CONFIG_DIR, "cache": CACHE_DIR, "data": SHARE}
+    found = False
+    for key, old in old_dirs.items():
+        if not old.is_dir():
+            continue
+        found = True
+        new_dirs[key].mkdir(parents=True, exist_ok=True)
+        for f in old.iterdir():
+            if f.is_file() and not (new_dirs[key] / f.name).exists():
+                f.rename(new_dirs[key] / f.name)
+        for sub in ("app", "venv", "app.new"):          # la app antigua se reinstala, no se mueve
+            if (old / sub).is_dir():
+                shutil.rmtree(old / sub)
+        if not any(old.iterdir()):
+            old.rmdir()
+    for f in LEGACY_FILES:
+        if f.exists():
+            f.unlink()
+            found = True
+    if found:
+        step("Se encontró Claude Tray (el nombre anterior): tus datos pasaron a Tamabot")
+    return found
+
+
 def copy_app():
     step(f"Copiando la app a {APP}")
     new = SHARE / "app.new"
@@ -362,15 +399,15 @@ def write_launcher():
     BIN.parent.mkdir(parents=True, exist_ok=True)
     BIN.write_text("#!/bin/sh\n"
                    f"cd {shlex.quote(str(APP))} || exit 1\n"
-                   f"exec {shlex.quote(str(VENV / 'bin' / 'python'))} -m claudetray \"$@\"\n")
+                   f"exec {shlex.quote(str(VENV / 'bin' / 'python'))} -m tamabot \"$@\"\n")
     BIN.chmod(0o755)
     ICON.parent.mkdir(parents=True, exist_ok=True)
     if (VENV / "bin" / "python").exists():
         run(str(VENV / "bin" / "python"), "-c",
             "from PySide6.QtGui import QGuiApplication; app = QGuiApplication([]);"
-            f"from claudetray.icon import save_png; save_png({str(ICON)!r})",
+            f"from tamabot.icon import save_png; save_png({str(ICON)!r})",
             cwd=APP, env={**os.environ, "QT_QPA_PLATFORM": "offscreen"})
-    entry = ("[Desktop Entry]\nType=Application\nName=Claude Tray\n"
+    entry = ("[Desktop Entry]\nType=Application\nName=Tamabot\n"
              "Comment=Aprueba solicitudes y sigue tus sesiones de Claude Code desde la bandeja\n"
              f"Exec={BIN}\nIcon={ICON if ICON.exists() else 'utilities-terminal'}\nTerminal=false\n"
              "Categories=Development;Utility;\nStartupNotify=false\nX-KDE-autostart-after=panel\n"
@@ -388,9 +425,9 @@ def write_launcher():
 # --- atajos en GNOME/Wayland (en X11 los registra la app sola) ---------------------------
 GNOME_KEYS = "org.gnome.settings-daemon.plugins.media-keys"
 GNOME_BASE = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/"
-GNOME_SHORTCUTS = {"claude-tray-allow": ("Claude Tray: permitir", "--allow", "<Super><Shift>a"),
-                   "claude-tray-deny": ("Claude Tray: rechazar", "--deny", "<Super><Shift>d"),
-                   "claude-tray-panel": ("Claude Tray: panel", "--panel", "<Super><Shift>c")}
+GNOME_SHORTCUTS = {"tamabot-allow": ("Tamabot: permitir", "--allow", "<Super><Shift>a"),
+                   "tamabot-deny": ("Tamabot: rechazar", "--deny", "<Super><Shift>d"),
+                   "tamabot-panel": ("Tamabot: panel", "--panel", "<Super><Shift>c")}
 
 
 def _gnome_list():
@@ -401,7 +438,7 @@ def _gnome_list():
 def gnome_shortcuts(add=True):
     if not shutil.which("gsettings") or "GNOME" not in os.environ.get("XDG_CURRENT_DESKTOP", "").upper():
         return
-    current = [p for p in _gnome_list() if "claude-tray-" not in p]
+    current = [p for p in _gnome_list() if "tamabot-" not in p and "claude-tray-" not in p]
     if add:
         if os.environ.get("XDG_SESSION_TYPE") != "wayland":
             return                         # en X11 la app los registra sola
@@ -419,10 +456,10 @@ def gnome_shortcuts(add=True):
 
 # --- arranque / parada -------------------------------------------------------------------
 def stop_running():
-    """Detiene Claude Tray si esta abierto (tambien una instalacion antigua, desde otra carpeta)."""
+    """Detiene Tamabot si esta abierto (tambien una instalacion antigua, desde otra carpeta)."""
     if not shutil.which("pkill"):
         return
-    r = run("pkill", "-u", str(os.getuid()), "-f", r"python[0-9.]* -m claudetray( |$)")
+    r = run("pkill", "-u", str(os.getuid()), "-f", r"python[0-9.]* -m (tamabot|claudetray)( |$)")
     if r.returncode == 0:
         time.sleep(1)
 
@@ -431,22 +468,23 @@ def start_app():
     if "--no-start" in sys.argv or not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
         return
     subprocess.Popen([str(BIN)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-    say("  Claude Tray está abierto: busca su icono en la bandeja.")
+    say("  Tamabot está abierto: busca su icono en la bandeja.")
 
 
 # --- principal ------------------------------------------------------------------------------
 def install():
-    from_src = (SRC / "claudetray" / "app.py").exists()
+    from_src = (SRC / "tamabot" / "app.py").exists()
     if not from_src:
-        die("Ejecuta el instalador desde la carpeta del proyecto (la que tiene claudetray/ y hook/).")
+        die("Ejecuta el instalador desde la carpeta del proyecto (la que tiene tamabot/ y hook/).")
     version = (SRC / "VERSION").read_text().strip() if (SRC / "VERSION").exists() else "?"
-    say(f"Claude Tray {version} · instalador")
+    say(f"Tamabot {version} · instalador")
     family = check_system()
     if not ASSUME_YES:
         ans = input("\n¿Continuar con la instalación? [S/n] ").strip().lower()
         if ans in ("n", "no"):
             die("Cancelado.")
     stop_running()
+    migrate_legacy()
     copy_app()
     qt_ok = True
     if "--no-venv" not in sys.argv:        # --no-venv: solo para los tests
@@ -458,17 +496,17 @@ def install():
     gnome_shortcuts(add=True)
     if not qt_ok:
         say("\n✓ Instalación completa, pero la app no abrirá hasta instalar lo que falta (ver arriba).")
-        say("  Después de instalarlo, ejecuta «claude-tray» (no hace falta reinstalar).")
+        say("  Después de instalarlo, ejecuta «tamabot» (no hace falta reinstalar).")
         return
     say("\n✓ Instalación completa.")
-    say("  · Ábrelo desde el menú o con «claude-tray». Se abre solo al iniciar sesión.")
+    say("  · Ábrelo desde el menú o con «tamabot». Se abre solo al iniciar sesión.")
     say("  · Atajos: Super+Shift+A permitir · Super+Shift+D rechazar · Super+Shift+C panel.")
     say("  · Para desinstalar:  python3 install.py --uninstall")
     start_app()
 
 
 def uninstall():
-    say("Desinstalando Claude Tray…")
+    say("Desinstalando Tamabot…")
     stop_running()
     remove_hooks()
     gnome_shortcuts(add=False)

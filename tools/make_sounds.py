@@ -1,4 +1,4 @@
-"""Genera los sonidos de la app (claudetray/sounds/*.wav): tonos suaves con desvanecimiento.
+"""Genera los sonidos de la app (tamabot/sounds/*.wav): tonos suaves con desvanecimiento.
 
 Se generan en vez de usar los del sistema para que suenen igual en cualquier distro.
 """
@@ -8,7 +8,7 @@ import wave
 from pathlib import Path
 
 RATE = 44100
-OUT = Path(__file__).resolve().parent.parent / "claudetray" / "sounds"
+OUT = Path(__file__).resolve().parent.parent / "tamabot" / "sounds"
 
 # nombre: [(frecuencia Hz, inicio s, duracion s, volumen[, frecuencia final para un barrido])]
 SOUNDS = {

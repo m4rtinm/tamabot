@@ -4,12 +4,12 @@
 cd "$(dirname "$0")/.."
 OUT=$1
 RUN=$(mktemp -d /tmp/ctr.XXXX)
-H="/usr/bin/python3 -I -S $PWD/hook/ctray_hook.py"
+H="/usr/bin/python3 -I -S $PWD/hook/tamabot_hook.py"
 cat > "$OUT/settings-ask.json" <<JSON
 {"hooks": {"PreToolUse": [{"matcher": "AskUserQuestion", "hooks": [{"type": "command", "command": "$H --ask", "timeout": 600}]}]}}
 JSON
 : > "$OUT/log-ask.txt"
-python3 tools/e2e_responder.py "$RUN/claude-tray.sock" allow "$OUT/log-ask.txt" &
+python3 tools/e2e_responder.py "$RUN/tamabot.sock" allow "$OUT/log-ask.txt" &
 RP=$!
 sleep 0.5
 konsole --separate --workdir "$PWD" -e env XDG_RUNTIME_DIR="$RUN" claude --model haiku --settings "$OUT/settings-ask.json" \

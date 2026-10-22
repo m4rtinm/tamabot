@@ -1,4 +1,4 @@
-"""Datos de ejemplo para revisar el diseno (python -m claudetray --demo)."""
+"""Datos de ejemplo para revisar el diseno (python -m tamabot --demo)."""
 import sys
 import tempfile
 import time
@@ -17,7 +17,7 @@ from .state import now_ms
 def load_demo(ctrl):
     t = int(time.time())
     # Historial de ejemplo en un archivo temporal: la demo nunca toca el real.
-    tmp = Path(tempfile.mkdtemp(prefix="ctray-demo-"))
+    tmp = Path(tempfile.mkdtemp(prefix="tamabot-demo-"))
     ctrl.history = History(tmp / "history.jsonl")
     ctrl.petstate = PetState(tmp / "pet-state.json", now=t - 9 * 86400)
     ctrl.petstate.d.update(hunger=42, energy=76, happy=88, xp=260, updated=t)

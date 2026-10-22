@@ -5,14 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from claudetray import config
-from claudetray.describe import activity, describe
+from tamabot import config
+from tamabot.describe import activity, describe
 
-HOOK = Path(__file__).resolve().parent.parent / "hook" / "ctray_hook.py"
+HOOK = Path(__file__).resolve().parent.parent / "hook" / "tamabot_hook.py"
 
 
 def load_hook():
-    spec = importlib.util.spec_from_file_location("ctray_hook_test", HOOK)
+    spec = importlib.util.spec_from_file_location("tamabot_hook_test", HOOK)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod

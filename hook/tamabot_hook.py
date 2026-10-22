@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Puente entre los hooks de Claude Code y Claude Tray.
+"""Puente entre los hooks de Claude Code y Tamabot.
 
 Con el argumento --ask (registrado como PreToolUse sincrono para AskUserQuestion)
 espera a que respondas la pregunta en la app y se la entrega a Claude.
@@ -15,9 +15,9 @@ import sys
 import uuid
 
 _XDG = os.environ.get("XDG_RUNTIME_DIR")
-RUNTIME = _XDG if _XDG and os.path.isdir(_XDG) else f"/tmp/claude-tray-{os.getuid()}"   # igual que la app
-SOCK = os.path.join(RUNTIME, "claude-tray.sock")
-CONFIG = os.path.join(os.path.expanduser("~"), ".config", "claude-tray", "config.json")
+RUNTIME = _XDG if _XDG and os.path.isdir(_XDG) else f"/tmp/tamabot-{os.getuid()}"   # igual que la app
+SOCK = os.path.join(RUNTIME, "tamabot.sock")
+CONFIG = os.path.join(os.path.expanduser("~"), ".config", "tamabot", "config.json")
 
 
 def approval_timeout():

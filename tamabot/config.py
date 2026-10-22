@@ -8,15 +8,15 @@ def _runtime_dir():
     base = os.environ.get("XDG_RUNTIME_DIR")
     if base and os.path.isdir(base):
         return Path(base)
-    return Path(f"/tmp/claude-tray-{os.getuid()}")
+    return Path(f"/tmp/tamabot-{os.getuid()}")
 
 
 RUNTIME = _runtime_dir()
-SOCKET_PATH = str(RUNTIME / "claude-tray.sock")
-CONFIG_DIR = Path.home() / ".config" / "claude-tray"
+SOCKET_PATH = str(RUNTIME / "tamabot.sock")
+CONFIG_DIR = Path.home() / ".config" / "tamabot"
 CONFIG_FILE = CONFIG_DIR / "config.json"
-CACHE_DIR = Path.home() / ".cache" / "claude-tray"
-DATA_DIR = Path.home() / ".local" / "share" / "claude-tray"
+CACHE_DIR = Path.home() / ".cache" / "tamabot"
+DATA_DIR = Path.home() / ".local" / "share" / "tamabot"
 SESSIONS_DIR = Path.home() / ".claude" / "sessions"
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -29,7 +29,7 @@ DEFAULTS = {
     # "corner": arriba a la derecha | "bubble": burbuja sobre el icono de la bandeja.
     "toast_position": "corner",
     # Mascota: nombre, color, accesorio (emoji) e icono de la bandeja ("pet" | "glyph").
-    "pet": {"name": "Clawd", "color": "#D97757", "accessory": "", "tray": "pet"},
+    "pet": {"name": "Bit", "color": "#D97757", "accessory": "", "tray": "pet"},
     # Sonido elegido por tipo de aviso ("" = sin sonido) y volumen (0-100).
     "sounds": {"permission": "campana", "question": "pregunta", "done": "listo", "fail": "error"},
     "sound_volume": 70,
@@ -58,6 +58,34 @@ def secure_runtime():
     st = os.lstat(path)
     if not stat.S_ISDIR(st.st_mode) or st.st_uid != os.getuid() or st.st_mode & 0o077:
         raise RuntimeError(f"La carpeta del socket {path} no es privada o no es tuya; no se usa por seguridad.")
+
+
+LEGACY = {"config": Path.home() / ".config" / "claude-tray",      # antes se llamaba Claude Tray
+          "cache": Path.home() / ".cache" / "claude-tray",
+          "data": Path.home() / ".local" / "share" / "claude-tray"}
+
+
+def migrate_legacy():
+    """Mueve los datos de Claude Tray (nombre anterior) a las carpetas de Tamabot, una sola vez."""
+    moved = []
+    for key, new in (("config", CONFIG_DIR), ("cache", CACHE_DIR), ("data", DATA_DIR)):
+        old = LEGACY[key]
+        if not old.is_dir():
+            continue
+        new.mkdir(parents=True, exist_ok=True)
+        for f in old.iterdir():
+            if f.is_file() and not (new / f.name).exists():
+                f.rename(new / f.name)
+                moved.append(str(new / f.name))
+    # el nombre por defecto de la mascota tambien cambio
+    try:
+        cfg = json.loads(CONFIG_FILE.read_text())
+        if (cfg.get("pet") or {}).get("name") == "Clawd":
+            cfg["pet"]["name"] = "Bit"
+            CONFIG_FILE.write_text(json.dumps(cfg, indent=2) + "\n")
+    except (OSError, ValueError):
+        pass
+    return moved
 
 
 def private_dirs():

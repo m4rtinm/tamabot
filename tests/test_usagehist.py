@@ -1,7 +1,7 @@
 import json
 from datetime import date, datetime, timedelta, timezone
 
-from claudetray.usagehist import DailyUsage
+from tamabot.usagehist import DailyUsage
 
 
 def line(day, mid, inp=10, out=5, cw=100, cr=1000, kind="assistant"):

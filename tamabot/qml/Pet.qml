@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Shapes
 
-// Mascota estilo Clawd.
+// Mascota estilo Bit.
 // mood:  idle | working | thinking | waiting | happy | celebrate | hungry | tired
 //        | sleep | bored | worried | eat | play | love
 // emote: "" | "!" | "?" | sweat | heart | dots | zz | sparkle | confetti | food

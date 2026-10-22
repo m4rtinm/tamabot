@@ -1,4 +1,4 @@
-"""El hook real (hook/ctray_hook.py) contra un servidor falso."""
+"""El hook real (hook/tamabot_hook.py) contra un servidor falso."""
 import json
 import os
 import socket
@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-HOOK = Path(__file__).resolve().parent.parent / "hook" / "ctray_hook.py"
+HOOK = Path(__file__).resolve().parent.parent / "hook" / "tamabot_hook.py"
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def env(tmp_path):
 def serve(env, reply=None):
     """Acepta una conexion, guarda el mensaje y responde (o no)."""
     srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    srv.bind(os.path.join(env["XDG_RUNTIME_DIR"], "claude-tray.sock"))
+    srv.bind(os.path.join(env["XDG_RUNTIME_DIR"], "tamabot.sock"))
     srv.listen(1)
     got = {}
 
@@ -79,7 +79,7 @@ def test_eventos_no_esperan_respuesta(env):
 
 
 def test_respeta_el_tiempo_de_espera_configurado(env, tmp_path):
-    cfg = tmp_path / ".config" / "claude-tray"
+    cfg = tmp_path / ".config" / "tamabot"
     cfg.mkdir(parents=True)
     (cfg / "config.json").write_text(json.dumps({"approval_timeout": 1}))
     got = serve(env)                      # nunca responde (got mantiene viva la conexion)

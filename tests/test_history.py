@@ -1,8 +1,8 @@
 import json
 import time
 
-from claudetray import history
-from claudetray.history import History
+from tamabot import history
+from tamabot.history import History
 
 
 def noon(days_ago=0):

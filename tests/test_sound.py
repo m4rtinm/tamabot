@@ -1,6 +1,6 @@
 import wave
 
-from claudetray import sound
+from tamabot import sound
 
 
 def test_todos_los_sonidos_existen_y_son_wav_validos():

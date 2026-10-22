@@ -1,4 +1,4 @@
-# Claude Tray
+# Tamabot
 
 Un compañero de bandeja para **Claude Code** en Linux. Te avisa cuando Claude necesita algo y te deja responder **sin volver a la terminal**: aprobar o rechazar comandos, contestar sus preguntas, ver en qué está cada sesión y cuánto llevas consumido. Además trae una mascota que reacciona a lo que pasa.
 
@@ -58,19 +58,19 @@ Funciona en cualquier distribución con escritorio gráfico. Lo que cambia segú
 ## Instalación
 
 ```bash
-git clone <url-del-repositorio> claude-tray
-cd claude-tray
+git clone <url-del-repositorio> tamabot
+cd tamabot
 ./install.sh
 ```
 
 El instalador:
 1. Revisa tu sistema y te dice exactamente qué falta, con el comando para tu distro (apt, dnf, pacman o zypper). **No instala paquetes del sistema por su cuenta.**
-2. Copia la app a `~/.local/share/claude-tray/`, así que la carpeta clonada se puede borrar.
+2. Copia la app a `~/.local/share/tamabot/`, así que la carpeta clonada se puede borrar.
 3. Prepara Python con PySide6 y comprueba que Qt cargue.
 4. Conecta Claude Code: agrega sus hooks y la status line a `~/.claude/settings.json`.
    - Antes hace un **respaldo**.
    - **Conserva tus hooks y tu status line**: la tuya se sigue mostrando.
-5. Crea el lanzador `claude-tray`, la entrada en el menú y el **autoarranque** al iniciar sesión.
+5. Crea el lanzador `tamabot`, la entrada en el menú y el **autoarranque** al iniciar sesión.
 
 Las sesiones de Claude Code que ya estaban abiertas toman los hooks nuevos al reiniciarlas.
 
@@ -102,9 +102,9 @@ Haz clic en el icono de la bandeja para abrir el panel.
 
 | Atajo | Acción | Comando equivalente |
 |---|---|---|
-| `Super+Shift+A` | permitir la última solicitud | `claude-tray --allow` |
-| `Super+Shift+D` | rechazar la última solicitud | `claude-tray --deny` |
-| `Super+Shift+C` | abrir o cerrar el panel | `claude-tray --panel` |
+| `Super+Shift+A` | permitir la última solicitud | `tamabot --allow` |
+| `Super+Shift+D` | rechazar la última solicitud | `tamabot --deny` |
+| `Super+Shift+C` | abrir o cerrar el panel | `tamabot --panel` |
 
 - **En X11** la app los registra sola.
 - **En Wayland,** el instalador los registra en GNOME. En otros escritorios, asigna los comandos en los atajos del sistema.
@@ -119,15 +119,15 @@ Haz clic en el icono de la bandeja para abrir el panel.
 
   | Qué | Dónde |
   |---|---|
-  | Historial | `~/.local/share/claude-tray/history.jsonl` |
-  | Configuración y mascota | `~/.config/claude-tray/` |
-  | Log | `~/.cache/claude-tray/claude-tray.log` |
+  | Historial | `~/.local/share/tamabot/history.jsonl` |
+  | Configuración y mascota | `~/.config/tamabot/` |
+  | Log | `~/.cache/tamabot/tamabot.log` |
 
 - Los textos de comandos, rutas y mensajes se muestran siempre como texto plano: el HTML nunca se interpreta, así nadie puede falsear lo que ves en una notificación.
 
 ## Configuración
 
-Casi todo se cambia en **Ajustes**. Algunas opciones extra están en `~/.config/claude-tray/config.json`:
+Casi todo se cambia en **Ajustes**. Algunas opciones extra están en `~/.config/tamabot/config.json`:
 
 | Clave | Qué hace | Por defecto |
 |---|---|---|
@@ -140,19 +140,19 @@ Casi todo se cambia en **Ajustes**. Algunas opciones extra están en `~/.config/
 
 | Problema | Solución |
 |---|---|
-| No veo el icono (GNOME) | Instala la extensión [AppIndicator and KStatusNotifierItem Support](https://extensions.gnome.org/extension/615/). Mientras, usa `claude-tray --panel`. |
+| No veo el icono (GNOME) | Instala la extensión [AppIndicator and KStatusNotifierItem Support](https://extensions.gnome.org/extension/615/). Mientras, usa `tamabot --panel`. |
 | La app no abre: «cannot open shared object file» | Falta una librería de Qt. Vuelve a ejecutar `./install.sh`: te dice cuál y el comando para instalarla. |
 | No llegan notificaciones | Reinicia tus sesiones de `claude`, que cargan los hooks al empezar. Revisa que la app esté abierta. |
-| «claude-tray: command not found» | Agrega `~/.local/bin` a tu `PATH` (el instalador te avisa si falta). |
+| «tamabot: command not found» | Agrega `~/.local/bin` a tu `PATH` (el instalador te avisa si falta). |
 | Un atajo no funciona | En Ajustes › Atajos se ve si otra app ya lo usa. Cámbialo en `config.json`. |
-| Algo raro | Mira `~/.cache/claude-tray/claude-tray.log`. |
+| Algo raro | Mira `~/.cache/tamabot/tamabot.log`. |
 
 ## Desarrollo
 
 ```bash
 uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python PySide6-Essentials pytest
 .venv/bin/python -m pytest                          # tests
-.venv/bin/python -m claudetray --demo               # datos de ejemplo (también: --bubble, --pet, --question, --usage, --history)
+.venv/bin/python -m tamabot --demo               # datos de ejemplo (también: --bubble, --pet, --question, --usage, --history)
 tools/test_distros.sh                               # el instalador en Ubuntu, Debian, Fedora y Arch (Docker)
 tools/e2e_ask.sh /ruta/salida                       # prueba real de AskUserQuestion con Claude Code (Konsole aparte)
 tools/docs_shots.sh                                 # regenera las capturas de docs/img
@@ -162,7 +162,7 @@ python3 tools/make_sounds.py                        # regenera los sonidos
 Estructura:
 
 - `hook/`: los scripts que ejecuta Claude Code. Solo usan la biblioteca estándar y tardan unos 20 ms.
-- `claudetray/`: la app (PySide6 + QML).
+- `tamabot/`: la app (PySide6 + QML).
   - `app.py`: el controlador.
   - `bridge.py`: el socket.
   - `state.py`: las sesiones y el consumo.
@@ -179,4 +179,4 @@ Estructura:
 
 ## Licencia
 
-Pendiente de definir.
+[MIT](LICENSE) © 2026 Martín Muñoz.

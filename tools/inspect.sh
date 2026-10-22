@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Lista las ventanas X de Claude Tray con su estado, geometria y region de blur.
-PID=$(pgrep -f "m claudetray" | tail -1)
+# Lista las ventanas X de Tamabot con su estado, geometria y region de blur.
+PID=$(pgrep -f "m tamabot" | tail -1)
 for id in $(xwininfo -root -tree | awk '/0x[0-9a-f]+ /{print $1}'); do
   p=$(xprop -id $id _NET_WM_PID 2>/dev/null | awk '{print $3}')
   [ "$p" = "$PID" ] || continue

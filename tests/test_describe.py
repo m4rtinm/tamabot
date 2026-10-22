@@ -1,6 +1,6 @@
 import pytest
 
-from claudetray.describe import activity, describe
+from tamabot.describe import activity, describe
 
 
 @pytest.mark.parametrize("cmd", [

@@ -38,7 +38,7 @@ MAX_TOASTS = 4
 XCB_TYPE_NOTIFICATION = 0x000800   # QXcbWindow::Notification
 XCB_TYPE_POPUP_MENU = 0x000200
 MAX_PENDING = 30                   # mas solicitudes abiertas que esto: se devuelven a la terminal
-log = logging.getLogger("claude-tray")
+log = logging.getLogger("tamabot")
 
 
 def _kde_dark():
@@ -407,7 +407,7 @@ class Controller(QObject):
     def setPet(self, key, value):
         pet = self._pet()
         if key == "name":
-            value = value.strip()[:18] or "Clawd"
+            value = value.strip()[:18] or "Bit"
         if key == "accessory" and value not in self.petstate.unlocked():
             return
         pet[key] = value
@@ -769,7 +769,7 @@ class Controller(QObject):
 
     @Slot(str)
     def deny(self, cid):
-        self._resolve(cid, {"behavior": "deny", "message": "El usuario rechazó esta acción desde Claude Tray."},
+        self._resolve(cid, {"behavior": "deny", "message": "El usuario rechazó esta acción desde Tamabot."},
                       outcome="deny")
 
     # --- atajos / comandos externos -------------------------------------------
@@ -778,7 +778,7 @@ class Controller(QObject):
         return max(reqs, key=lambda i: i["created"]) if reqs else None
 
     def control(self, action):
-        """Acciones de los atajos y de `claude-tray --allow` etc. Devuelve (ok, mensaje)."""
+        """Acciones de los atajos y de `tamabot --allow` etc. Devuelve (ok, mensaje)."""
         if action == "panel":
             self.togglePanel_from_shortcut()
             return True, "Panel"
@@ -959,8 +959,8 @@ class Controller(QObject):
 
 
 def setup_logging():
-    """Log en ~/.cache/claude-tray/claude-tray.log (rotativo), con errores de Python y de QML."""
-    path = config.CACHE_DIR / "claude-tray.log"
+    """Log en ~/.cache/tamabot/tamabot.log (rotativo), con errores de Python y de QML."""
+    path = config.CACHE_DIR / "tamabot.log"
     handler = logging.handlers.RotatingFileHandler(path, maxBytes=1_000_000, backupCount=2, encoding="utf-8")
     handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
     root = logging.getLogger()
@@ -977,6 +977,7 @@ def setup_logging():
 
 def main():
     os.umask(0o077)                      # todo lo que crea la app queda solo para su dueño
+    config.migrate_legacy()
     config.private_dirs()
     setup_logging()
     # xcb (X11, o XWayland en Wayland) permite ubicar las notificaciones donde corresponde.
@@ -986,8 +987,8 @@ def main():
     os.environ.setdefault("QT_QUICK_CONTROLS_STYLE", "Basic")
     QQuickWindow.setDefaultAlphaBuffer(True)
     app = QApplication(sys.argv)
-    app.setApplicationName("Claude Tray")
-    app.setDesktopFileName("claude-tray")
+    app.setApplicationName("Tamabot")
+    app.setDesktopFileName("tamabot")
     app.setQuitOnLastWindowClosed(False)
     if "Inter" in QFontDatabase.families():
         font = QFont("Inter")
@@ -999,7 +1000,7 @@ def main():
         log.error("%s", exc)
         return 1
     if another_instance_running(config.SOCKET_PATH):
-        print("Claude Tray ya está abierto.")
+        print("Tamabot ya está abierto.")
         return 0
     no_tray = not QSystemTrayIcon.isSystemTrayAvailable()
     if no_tray:
@@ -1008,7 +1009,7 @@ def main():
     if no_tray:      # sin bandeja (p. ej. GNOME sin AppIndicator): explicar como seguir
         QTimer.singleShot(2500, lambda: ctrl._show_info({
             "sid": "", "kind": "ask", "title": "No encontré la bandeja del sistema",
-            "body": "Las notificaciones funcionan igual. Abre el panel con «claude-tray --panel». "
+            "body": "Las notificaciones funcionan igual. Abre el panel con «tamabot --panel». "
                     "En GNOME, instala la extensión «AppIndicator and KStatusNotifierItem Support»."}))
     if "--bubble" in sys.argv or "--corner" in sys.argv:   # para pruebas: no se guarda
         ctrl._position_override = "bubble" if "--bubble" in sys.argv else "corner"

@@ -8,7 +8,7 @@ Window {
     visible: false
     flags: Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     color: "transparent"
-    title: "Claude Tray"
+    title: "Tamabot"
 
     readonly property int m: 22
     property bool autoHide: true
@@ -489,7 +489,7 @@ Window {
                                 color: T.text3; font.pixelSize: 11
                                 text: ctrl.shortcuts.x11
                                       ? "Por seguridad, «Permitir» nunca aprueba comandos destructivos."
-                                      : "En Wayland, asígnalos en los atajos de tu escritorio con los comandos: claude-tray --allow, --deny y --panel."
+                                      : "En Wayland, asígnalos en los atajos de tu escritorio con los comandos: tamabot --allow, --deny y --panel."
                             }
                         }
                         Item {
@@ -499,7 +499,7 @@ Window {
                                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
                                 spacing: 6
                                 Btn { kind: ctrl.pet.tray === "pet" ? "glass" : "quiet"; text: "Mascota"; onClicked: ctrl.setPet("tray", "pet") }
-                                Btn { kind: ctrl.pet.tray === "glyph" ? "glass" : "quiet"; text: "Destello"; onClicked: ctrl.setPet("tray", "glyph") }
+                                Btn { kind: ctrl.pet.tray === "glyph" ? "glass" : "quiet"; text: "Simple"; onClicked: ctrl.setPet("tray", "glyph") }
                             }
                         }
                     }

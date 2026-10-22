@@ -1,6 +1,6 @@
 import pytest
 
-from claudetray.pet import PetState, compute_mood, level_for, pet_line, xp_for_level
+from tamabot.pet import PetState, compute_mood, level_for, pet_line, xp_for_level
 
 T0 = 1_800_000_000.0
 
@@ -122,7 +122,7 @@ def test_frases_con_datos_propios():
 
 
 def test_reacciones():
-    from claudetray.pet import reaction
+    from tamabot.pet import reaction
     assert reaction("prompt", T0, "api")
     assert "{p}" not in reaction("start", T0, "api")
     assert reaction("nada", T0) == ""

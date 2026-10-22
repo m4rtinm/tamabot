@@ -1,8 +1,8 @@
 import math
 import struct
 
-from claudetray.glass import color_matrix, rounded_region, tail_region
-from claudetray.listmodel import DictListModel
+from tamabot.glass import color_matrix, rounded_region, tail_region
+from tamabot.listmodel import DictListModel
 
 
 def area(rects):

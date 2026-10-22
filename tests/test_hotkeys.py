@@ -1,5 +1,5 @@
-from claudetray import hotkeys
-from claudetray.hotkeys import GlobalHotkeys, parse
+from tamabot import hotkeys
+from tamabot.hotkeys import GlobalHotkeys, parse
 
 
 def test_lee_atajos():

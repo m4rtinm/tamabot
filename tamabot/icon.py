@@ -1,4 +1,4 @@
-"""Icono de la bandeja: destello naranja que gira mientras hay trabajo y lleva un punto si te espera."""
+"""Iconos de la bandeja: la mascota animada, o un anillo simple que gira mientras hay trabajo."""
 import math
 
 from PySide6.QtCore import QPointF, QRectF, Qt
@@ -10,14 +10,20 @@ RAYS = 12
 
 
 def paint_glyph(p, cx, cy, size, angle=0.0, color=ORANGE):
-    pen = QPen(color, size * 0.105, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap)
-    p.setPen(pen)
-    r0 = size * 0.07
-    for i in range(RAYS):
-        a = math.radians(angle + i * 360 / RAYS + (6 if i % 2 else 0))
-        length = size * (0.46 if i % 2 == 0 else 0.36)
-        p.drawLine(QPointF(cx + r0 * math.cos(a), cy + r0 * math.sin(a)),
-                   QPointF(cx + length * math.cos(a), cy + length * math.sin(a)))
+    """Icono simple: un anillo; mientras hay trabajo, un arco recorre el anillo."""
+    track = QColor(color)
+    track.setAlphaF(0.35)
+    w = size * 0.12
+    r = size * 0.34
+    rect = QRectF(cx - r, cy - r, 2 * r, 2 * r)
+    p.setBrush(Qt.BrushStyle.NoBrush)
+    p.setPen(QPen(track, w, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+    p.drawEllipse(rect)
+    p.setPen(QPen(color, w, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+    p.drawArc(rect, int((90 - angle) * 16), int(-110 * 16))
+    p.setPen(Qt.PenStyle.NoPen)
+    p.setBrush(color)
+    p.drawEllipse(QPointF(cx, cy), size * 0.09, size * 0.09)
 
 
 def tray_icon(angle=0.0, badge=False, dim=False, size=64, muted=False):
@@ -43,13 +49,7 @@ def tray_icon(angle=0.0, badge=False, dim=False, size=64, muted=False):
 
 
 def save_png(path, size=256):
-    pm = QPixmap(size, size)
-    pm.fill(Qt.GlobalColor.transparent)
-    p = QPainter(pm)
-    p.setRenderHint(QPainter.RenderHint.Antialiasing)
-    paint_glyph(p, size / 2, size / 2, size)
-    p.end()
-    pm.save(str(path))
+    pet_icon("idle", 1, size=size).pixmap(size, size).save(str(path))
 
 
 def paint_muted(p, size):
