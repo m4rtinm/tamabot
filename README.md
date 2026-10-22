@@ -58,7 +58,7 @@ Funciona en cualquier distribución con escritorio gráfico. Lo que cambia segú
 ## Instalación
 
 ```bash
-git clone <url-del-repositorio> tamabot
+git clone https://github.com/m4rtinm/tamabot.git
 cd tamabot
 ./install.sh
 ```
