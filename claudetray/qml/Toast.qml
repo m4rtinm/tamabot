@@ -138,7 +138,7 @@ Window {
             onClicked: { ctrl.focusSession(w.item.sid); w.closing = true }
         }
         Timer {
-            running: w.mode === "info" && !w.closing && !hover.hovered   // no se cierra mientras lo miras
+            running: w.mode === "info" && !w.closing && !hover.hovered && !ctrl.demo   // no se cierra mientras lo miras
             interval: 6500
             onTriggered: w.closing = true
         }

@@ -15,8 +15,9 @@ ORIGINAL = {
 
 
 def run(home, *args):
-    subprocess.run([sys.executable, str(ROOT / "install.py"), *args], check=True, capture_output=True,
-                   env={**os.environ, "HOME": str(home)})
+    # --no-venv: no descarga PySide6 en los tests; --yes y --no-start: sin preguntas ni ventanas
+    subprocess.run([sys.executable, str(ROOT / "install.py"), "--yes", "--no-start", "--no-venv", *args],
+                   check=True, capture_output=True, env={**os.environ, "HOME": str(home)})
 
 
 def test_instalar_dos_veces_y_desinstalar(tmp_path):
@@ -40,9 +41,35 @@ def test_instalar_dos_veces_y_desinstalar(tmp_path):
     assert cfg["statusline_chain"] == "/x/mi_status.sh"
     assert (tmp_path / ".local" / "bin" / "claude-tray").exists()
     assert len(list(settings.parent.glob("settings.json.bak-claude-tray-*"))) == 2
+    # la app queda copiada fuera de la carpeta del proyecto, y los hooks apuntan ahi
+    app = tmp_path / ".local" / "share" / "claude-tray" / "app"
+    assert (app / "claudetray" / "app.py").exists() and (app / "hook" / "ctray_hook.py").exists()
+    assert str(app / "hook" / "ctray_hook.py") in cmds["PermissionRequest"][0]
+    assert not list(app.rglob("__pycache__"))
 
     run(tmp_path, "--uninstall")
     restored = json.loads(settings.read_text())
     assert restored["hooks"] == ORIGINAL["hooks"] and restored["model"] == "opus"
     assert restored["statusLine"]["command"] == "/x/mi_status.sh"
     assert not (tmp_path / ".local" / "bin" / "claude-tray").exists()
+    assert not app.exists()
+    assert (tmp_path / ".config" / "claude-tray").exists()          # sin --purge, tus datos quedan
+
+
+def test_settings_json_daniado_no_se_toca(tmp_path):
+    settings = tmp_path / ".claude" / "settings.json"
+    settings.parent.mkdir()
+    settings.write_text('{"hooks": {roto')
+    r = subprocess.run([sys.executable, str(ROOT / "install.py"), "--yes", "--no-start", "--no-venv"],
+                       capture_output=True, text=True, env={**os.environ, "HOME": str(tmp_path)})
+    assert r.returncode == 1 and "error de formato" in r.stdout
+    assert settings.read_text() == '{"hooks": {roto'
+
+
+def test_rutas_con_espacios_quedan_entrecomilladas(tmp_path):
+    home = tmp_path / "mi carpeta"
+    home.mkdir()
+    run(home)
+    data = json.loads((home / ".claude" / "settings.json").read_text())
+    cmd = data["hooks"]["PermissionRequest"][0]["hooks"][0]["command"]
+    assert "'" in cmd and "mi carpeta" in cmd                    # shlex.quote

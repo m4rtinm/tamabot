@@ -146,6 +146,7 @@ class Controller(QObject):
         self._blur_jobs = {}
         self._laying_out = False
         self.hotkeys = None              # se registran despues de crear la bandeja
+        self._demo = "--demo" in sys.argv   # en la demo los avisos no se cierran solos (capturas)
         self._phase = 0
         self._tray_key = None
         self._last_done = (0.0, "", False)   # (cuando, proyecto, fue larga) del ultimo "terminado"
@@ -944,6 +945,7 @@ class Controller(QObject):
     pet = Property("QVariantMap", _pet, notify=petChanged)
     muted = Property(bool, _muted, notify=mutedChanged)
     shortcuts = Property("QVariantMap", _shortcuts_info, notify=shortcutsChanged)
+    demo = Property(bool, lambda self: self._demo, constant=True)
     sounds = Property("QVariantMap", _sounds, notify=soundsChanged)
     soundVolume = Property(int, lambda self: int(self.cfg.get("sound_volume", 70)), notify=soundsChanged)
     canPlaySound = Property(bool, lambda self: sound.available(), constant=True)
@@ -973,45 +975,7 @@ def setup_logging():
     qInstallMessageHandler(qt_messages)
 
 
-CONTROL_FLAGS = {"--allow": "allow", "--deny": "deny", "--panel": "panel", "--terminal": "terminal"}
-
-
-def send_control(action):
-    """`claude-tray --allow` etc.: le pide la accion a la app abierta por el socket."""
-    import json
-    import socket
-    try:
-        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        s.settimeout(3)
-        s.connect(config.SOCKET_PATH)
-        s.sendall((json.dumps({"kind": "control", "action": action}) + "\n").encode())
-        buf = b""
-        while b"\n" not in buf:
-            chunk = s.recv(65536)
-            if not chunk:
-                break
-            buf += chunk
-        reply = json.loads(buf.split(b"\n")[0] or b"{}")
-    except (OSError, ValueError):
-        print("Claude Tray no está abierto.")
-        return 2
-    print(reply.get("message", ""))
-    return 0 if reply.get("ok") else 1
-
-
 def main():
-    if "--version" in sys.argv:
-        from . import __version__
-        print(f"Claude Tray {__version__}")
-        return 0
-    for flag, action in CONTROL_FLAGS.items():
-        if flag in sys.argv:
-            try:
-                config.secure_runtime()
-            except (RuntimeError, OSError) as exc:
-                print(exc)
-                return 2
-            return send_control(action)
     os.umask(0o077)                      # todo lo que crea la app queda solo para su dueño
     config.private_dirs()
     setup_logging()

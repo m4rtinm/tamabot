@@ -2,11 +2,14 @@
 import sys
 import tempfile
 import time
+from datetime import date, timedelta
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QTimer
 
+from . import state
 from .history import History
+from .usagehist import DailyUsage
 from .pet import PetState
 from .state import now_ms
 
@@ -18,6 +21,18 @@ def load_demo(ctrl):
     ctrl.history = History(tmp / "history.jsonl")
     ctrl.petstate = PetState(tmp / "pet-state.json", now=t - 9 * 86400)
     ctrl.petstate.d.update(hunger=42, energy=76, happy=88, xp=260, updated=t)
+    # la demo no lee tus sesiones ni tu consumo reales: todo es de ejemplo
+    state.SESSIONS_DIR = tmp / "sessions"
+    ctrl.tracker.s.clear()
+    ctrl.daily = DailyUsage(root=tmp / "projects", cache_path=tmp / "daily.json")
+    pattern = [1.6, 0.4, 1.5, 0.2, 0.0, 2.3, 1.9, 1.1, 0.9, 1.7, 0.0, 0.3, 1.2, 2.0, 1.4]
+    for i in range(30):
+        day = (date.today() - timedelta(days=i)).isoformat()
+        total = int(pattern[i % len(pattern)] * 1_000_000)
+        if total:
+            ctrl.daily.days[day] = {"input": total // 50, "output": total // 10, "cache_write": total - total // 50 - total // 10,
+                                    "cache_read": total * 9, "messages": total // 9000}
+    ctrl._daily_ready(from_worker=False)
     for ago, outcome, proj, title, detail, danger in (
             (60, "allow", "webapp", "Ejecutar comando", "npm test -- payments", False),
             (400, "deny", "api-gateway", "Ejecutar comando", "rm -rf build/ dist/", True),
@@ -91,7 +106,7 @@ def load_demo(ctrl):
                                             "new_string": "const total = Math.round(amount * rate * 100) / 100;"}})
     ctrl._show_info({"sid": "d3", "kind": "done", "title": "landing terminó",
                      "body": "Listo: el hero ahora usa clamp() para el título y la imagen se recorta a 4:5."})
-    if ctrl.toastPosition != "bubble":   # en modo burbuja el panel las esconderia
+    if ctrl.toastPosition != "bubble" and "--question" not in sys.argv:   # el panel taparia las burbujas o la pregunta
         ctrl.panel.setProperty("autoHide", False)
         ctrl.openPanel(at_cursor=False)
         if "--scroll" in sys.argv:

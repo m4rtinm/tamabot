@@ -1,127 +1,182 @@
 # Claude Tray
 
-Icono en la bandeja de KDE para manejar tus sesiones de **Claude Code** sin volver a la terminal:
+Un compañero de bandeja para **Claude Code** en Linux. Te avisa cuando Claude necesita algo y te deja responder **sin volver a la terminal**: aprobar o rechazar comandos, contestar sus preguntas, ver en qué está cada sesión y cuánto llevas consumido. Además trae una mascota que reacciona a lo que pasa.
 
-- **Aprobar o rechazar** solicitudes de permiso desde una notificación flotante, con el detalle del comando o del diff.
-- **Ver en qué está cada sesión**: si está trabajando, te espera o terminó, la última herramienta, tu último mensaje y su respuesta.
-- **Consumo en tiempo real** de las ventanas de 5 horas y 7 días del plan, con la hora de reinicio.
-- **Mascota tamagotchi** (estilo Clawd): vive en el icono y en el panel, cambia de ánimo según tus sesiones y te habla. Tiene hambre, energía y cariño; se le da de comer, se juega con ella y se la acaricia; sube de nivel con tu trabajo y desbloquea accesorios.
-- **Responder preguntas** con opciones (`AskUserQuestion`) desde la notificación o el panel, incluida «Otra respuesta».
-- **Escribirle a una sesión** desde el panel (respuestas rápidas o texto libre), si corre en Konsole.
-- **Consumo por día**: gráfico de 7 o 30 días con tus tokens, leído de los registros locales de Claude Code.
-- **Ir a la terminal**: lleva al frente la pestaña exacta de Konsole donde corre la sesión.
+> Proyecto independiente y no oficial: no está afiliado ni respaldado por Anthropic. «Claude» y «Claude Code» son marcas de Anthropic.
 
-Diseño de vidrio translúcido con desenfoque real y saturación (*vibrancy*) a través de los efectos Blur y Contrast de KWin.
+<p align="center">
+  <img src="docs/img/notificaciones.png" width="300" alt="Notificaciones de permiso">
+  <img src="docs/img/panel.png" width="300" alt="Panel de la bandeja">
+  <img src="docs/img/mascota.png" width="300" alt="Ficha de la mascota">
+</p>
 
-## Cómo funciona
+## Qué hace
 
-```
-claude (terminal) ──hook PermissionRequest──▶ socket local ──▶ notificación  [Rechazar] [Permitir]
-                  ◀─────────── allow / deny ─────────────────┘
-                  ──hooks de estado (asíncronos)──▶ panel de sesiones
-                  ──status line (rate_limits)─────▶ consumo 5 h / 7 d
-~/.claude/sessions/<pid>.json ─────────────────▶ descubre las sesiones abiertas
-```
+- **Aprobar o rechazar** cada solicitud de permiso desde una notificación, con el comando o el diff a la vista. Los comandos destructivos (`rm -rf`, `git push --force`, `sudo`…) piden **mantener presionado** «Permitir».
+- **Responder las preguntas** con opciones que hace Claude, incluida una respuesta libre.
+- **Ver tus sesiones:** si cada una trabaja, te espera o terminó, la última herramienta, tu mensaje y su respuesta. Desde ahí puedes **ir a su terminal** o **escribirle**.
+- **Consumo en tiempo real** de las ventanas de 5 h y 7 d del plan, y un **gráfico de tokens por día** (7 o 30 días).
+- **Historial** de lo aprobado, rechazado y respondido, con buscador.
+- **Una mascota estilo tamagotchi** en la bandeja y en el panel: cambia de ánimo según tus sesiones, te habla, tiene hambre y energía, sube de nivel y se le pueden desbloquear accesorios.
+- **Atajos de teclado, sonidos propios, modo silencio** y notificaciones en la esquina o como globo sobre el icono.
 
-- El socket vive en `$XDG_RUNTIME_DIR/claude-tray.sock`, accesible solo para tu usuario.
-- **Si la app está cerrada**, el hook termina sin responder y Claude Code pregunta en la terminal como siempre.
-- **Si no respondes** en `approval_timeout` segundos (por defecto 540), la pregunta vuelve a la terminal.
-- **Si respondes en la terminal**, la notificación se cierra sola.
-- Los comandos destructivos (`rm -rf`, `git push --force`, `sudo`, `git reset --hard`, …) piden **mantener presionado** «Permitir», y para ellos no se ofrece «Siempre».
+Si la app está cerrada o no respondes a tiempo, **Claude Code pregunta en la terminal como siempre**: nunca te bloquea.
+
+<p align="center">
+  <img src="docs/img/pregunta.png" width="300" alt="Pregunta con opciones">
+  <img src="docs/img/burbuja.png" width="300" alt="Modo burbuja sobre el icono">
+  <img src="docs/img/consumo.png" width="300" alt="Consumo por día">
+</p>
+
+## Compatibilidad
+
+Funciona en cualquier distribución con escritorio gráfico. Lo que cambia según el escritorio:
+
+| | KDE Plasma | GNOME | XFCE, Cinnamon, MATE, otros |
+|---|---|---|---|
+| Icono en la bandeja | ✓ | con la extensión [AppIndicator](https://extensions.gnome.org/extension/615/) | ✓ |
+| Notificaciones, panel, mascota | ✓ | ✓ | ✓ |
+| Vidrio con desenfoque real | ✓ (KWin) | translúcido, sin desenfoque | translúcido, sin desenfoque |
+| Atajos de teclado | automáticos en X11 | automáticos en X11; en Wayland los registra el instalador | automáticos en X11 |
+| «Ir a la terminal» | pestaña exacta en Konsole | ventana de la terminal | ventana de la terminal |
+| Escribirle a una sesión | Konsole | — | — |
+
+- **Wayland:** la app usa XWayland, que traen todos los escritorios, para poder ubicar las notificaciones donde corresponde.
+- **Probado en:**
+  - KDE Plasma 5 sobre X11, con uso real.
+  - Ubuntu 24.04, Fedora 41, Arch y Debian 12, solo el instalador y el arranque de la app, en contenedores.
+
+## Requisitos
+
+- **Linux** con escritorio gráfico.
+- **[Claude Code](https://docs.claude.com/en/docs/claude-code)** instalado (el comando `claude`).
+- **`python3`** para ejecutar el instalador.
+- **Python 3.12 o superior para la app:**
+  - si tu distro no lo trae (Debian 12, Ubuntu 22.04), el instalador lo resuelve con [uv](https://docs.astral.sh/uv/), que descarga uno aparte sin tocar el del sistema;
+  - PySide6 (Qt) se descarga solo, unos 100 MB.
 
 ## Instalación
 
-Requiere KDE Plasma en X11 y [uv](https://docs.astral.sh/uv/). PySide6 6.12 necesita Python 3.12 o superior: con 3.10, Python termina cayéndose.
-
 ```bash
+git clone <url-del-repositorio> claude-tray
 cd claude-tray
-uv venv --python 3.12 .venv
-uv pip install --python .venv/bin/python PySide6-Essentials
-python3 install.py          # hooks + status line (con respaldo), lanzador, menú y autoarranque
-claude-tray                 # o búscalo en el menú de aplicaciones
+./install.sh
 ```
 
-Las sesiones de Claude Code que ya estaban abiertas aparecen igual en el panel, pero los hooks nuevos se cargan recién al reiniciarlas.
+El instalador:
+1. Revisa tu sistema y te dice exactamente qué falta, con el comando para tu distro (apt, dnf, pacman o zypper). **No instala paquetes del sistema por su cuenta.**
+2. Copia la app a `~/.local/share/claude-tray/`, así que la carpeta clonada se puede borrar.
+3. Prepara Python con PySide6 y comprueba que Qt cargue.
+4. Conecta Claude Code: agrega sus hooks y la status line a `~/.claude/settings.json`.
+   - Antes hace un **respaldo**.
+   - **Conserva tus hooks y tu status line**: la tuya se sigue mostrando.
+5. Crea el lanzador `claude-tray`, la entrada en el menú y el **autoarranque** al iniciar sesión.
 
-Para desinstalar: `python3 install.py --uninstall` (deja tus otros hooks y ajustes como estaban).
+Las sesiones de Claude Code que ya estaban abiertas toman los hooks nuevos al reiniciarlas.
+
+| Para… | Ejecuta |
+|---|---|
+| Actualizar | `git pull && ./install.sh` |
+| Desinstalar (conserva tu historial y tu mascota) | `./install.sh --uninstall` |
+| Desinstalar y borrar todo | `./install.sh --uninstall --purge` |
+| Instalar sin autoarranque | `./install.sh --no-autostart` |
 
 ## Uso
 
-| Acción | Dónde |
+Haz clic en el icono de la bandeja para abrir el panel.
+
+| Quiero… | Cómo |
 |---|---|
-| Abrir o cerrar el panel | clic en el icono de la bandeja (Esc cierra) |
-| Permitir / Rechazar | botones de la notificación o del panel |
-| Permitir siempre | «Siempre», que aplica la regla que sugiere Claude Code (p. ej. `Bash(git push:*)`) |
-| Responder en la terminal | «Terminal», que devuelve la pregunta y te lleva a la pestaña |
-| Responder una pregunta | elegir las opciones (o escribir «Otra respuesta») y «Responder»; «Terminal» la devuelve a la terminal |
-| Escribirle a una sesión | clic en la sesión › respuestas rápidas o el campo «Escribir a esta sesión…» (solo Konsole) |
-| Ver el consumo por día | clic en la tarjeta de consumo › 7 o 30 días; pasa el mouse por una barra para el detalle, o «Ver tabla» |
-| Ver el historial | icono del reloj en el panel: lo aprobado, lo rechazado y lo que volvió a la terminal, con buscador y resumen del día |
-| Ver detalle de una sesión | clic en la sesión, y luego «Ir a la terminal» |
-| Avisos de «terminó» | menú contextual del icono, «Avisar cuando una sesión termine» |
-| Dónde salen las notificaciones | selector «Esquina / Burbuja» al final del panel, o menú contextual › Notificaciones |
+| Permitir / rechazar | botones de la notificación o del panel |
+| Permitir siempre | «Siempre»: aplica la regla que sugiere Claude Code (p. ej. `Bash(git push:*)`) |
+| Responder en la terminal | «Terminal»: devuelve la pregunta y te lleva a la terminal |
+| Responder una pregunta | elegir opciones (o escribir «Otra respuesta») y «Responder» |
+| Escribirle a una sesión | clic en la sesión › respuestas rápidas o «Escribir a esta sesión…» (Konsole) |
+| Ver el consumo por día | clic en la tarjeta de consumo |
+| Ver el historial | icono del reloj |
+| Silenciar | icono de la campana, o clic derecho en el icono › Silenciar (30 min, 1 h, hasta mañana…) |
+| Ajustes | icono de los deslizadores: notificaciones, sonidos, atajos, mascota, icono |
+| La mascota | clic en ella: su ficha, con comida, juegos y nivel |
 
-**Modo burbuja:** las notificaciones salen como globos de diálogo sobre el icono de la bandeja, con un pico que lo apunta. KDE no informa dónde está el icono, así que la app recuerda dónde hiciste clic en él: **haz clic una vez en el icono** para que el pico quede bien alineado. Mientras el panel está abierto, las burbujas se esconden, porque las solicitudes ya se ven en el panel.
+### Atajos de teclado
 
-**La mascota.** Clic en ella abre su ficha: nivel y experiencia, saciedad, energía y cariño, días de vida, aprobadas, tareas y racha, y los botones para darle comida (manzana, pizza o galleta), jugar y acariciarla.
-
-| Ánimo | Cuándo | Cómo se ve |
+| Atajo | Acción | Comando equivalente |
 |---|---|---|
-| Te espera | hay una solicitud o pregunta | saluda con «!» (permiso), «?» (pregunta) o 💧 (comando destructivo) |
-| Trabajando / pensando | una sesión trabaja / aún no usa herramientas | rebota y mira a los lados / globo «…» |
-| Feliz / celebrando | terminó una tarea / una de más de 10 min | salta con ojos ^ ^ / confeti |
-| Preocupada | una sesión se detuvo por un error | tiembla y suda |
-| Con hambre / cansada | saciedad < 25 % / energía < 20 % o uso 5 h ≥ 80 % | piensa en una manzana / ojos caídos y se balancea |
-| Aburrida / durmiendo | 45 min sin actividad / sin sesiones | mira de reojo / zZ |
-| Comiendo, jugando, cariño | justo después de cada acción | mastica, da volteretas, corazones |
+| `Super+Shift+A` | permitir la última solicitud | `claude-tray --allow` |
+| `Super+Shift+D` | rechazar la última solicitud | `claude-tray --deny` |
+| `Super+Shift+C` | abrir o cerrar el panel | `claude-tray --panel` |
 
-Experiencia: +10 por tarea (+25 si fue larga) y +2 por aprobación o comida. Accesorios: sombrero y moño desde el nivel 1, lentes desde el 2, audífonos desde el 3, flor desde el 4 y corona desde el 5. El ⚙ abre los ajustes (nombre, color, accesorio, notificaciones, icono). Si eliges el icono «Destello», este gira mientras alguna sesión trabaja y muestra un punto naranja cuando alguna te espera.
+- **En X11** la app los registra sola.
+- **En Wayland,** el instalador los registra en GNOME. En otros escritorios, asigna los comandos en los atajos del sistema.
+- Por seguridad, «permitir» por atajo **nunca aprueba comandos destructivos**.
+
+## Privacidad y seguridad
+
+- **Todo es local.** La app no se conecta a internet ni usa la API: **no consume tokens**. Solo descarga PySide6 al instalar.
+- A Claude solo le llega tu decisión (permitir, rechazar o tu respuesta), igual que si contestaras en la terminal.
+- La comunicación con los hooks va por un socket Unix privado, en `$XDG_RUNTIME_DIR`. Si esa variable no existe, la app usa `/tmp`, pero solo si la carpeta es tuya y privada.
+- Tus datos quedan solo legibles para ti (carpetas 0700, archivos 0600):
+
+  | Qué | Dónde |
+  |---|---|
+  | Historial | `~/.local/share/claude-tray/history.jsonl` |
+  | Configuración y mascota | `~/.config/claude-tray/` |
+  | Log | `~/.cache/claude-tray/claude-tray.log` |
+
+- Los textos de comandos, rutas y mensajes se muestran siempre como texto plano: el HTML nunca se interpreta, así nadie puede falsear lo que ves en una notificación.
 
 ## Configuración
 
-`~/.config/claude-tray/config.json`:
+Casi todo se cambia en **Ajustes**. Algunas opciones extra están en `~/.config/claude-tray/config.json`:
 
-```json
-{
-  "approval_timeout": 540,
-  "notify_done": true,
-  "toast_position": "corner",
-  "statusline_chain": null
-}
-```
+| Clave | Qué hace | Por defecto |
+|---|---|---|
+| `approval_timeout` | segundos que espera tu respuesta antes de devolver la pregunta a la terminal | `540` |
+| `shortcuts` | los atajos, p. ej. `{"allow": "Ctrl+Alt+A"}` | `Super+Shift+A/D/C` |
+| `global_shortcuts` | registrar los atajos en X11 | `true` |
+| `statusline_chain` | tu status line anterior, que se sigue mostrando | la que tenías |
 
-`statusline_chain` guarda la status line que tenías antes de instalar: se sigue mostrando en la terminal y, además, se envían los datos de consumo a la app.
+## Solución de problemas
+
+| Problema | Solución |
+|---|---|
+| No veo el icono (GNOME) | Instala la extensión [AppIndicator and KStatusNotifierItem Support](https://extensions.gnome.org/extension/615/). Mientras, usa `claude-tray --panel`. |
+| La app no abre: «cannot open shared object file» | Falta una librería de Qt. Vuelve a ejecutar `./install.sh`: te dice cuál y el comando para instalarla. |
+| No llegan notificaciones | Reinicia tus sesiones de `claude`, que cargan los hooks al empezar. Revisa que la app esté abierta. |
+| «claude-tray: command not found» | Agrega `~/.local/bin` a tu `PATH` (el instalador te avisa si falta). |
+| Un atajo no funciona | En Ajustes › Atajos se ve si otra app ya lo usa. Cámbialo en `config.json`. |
+| Algo raro | Mira `~/.cache/claude-tray/claude-tray.log`. |
 
 ## Desarrollo
 
 ```bash
-uv pip install --python .venv/bin/python pytest
-.venv/bin/python -m pytest          # 67 tests: estado, hook, historial, instalador…
-```
-
-```bash
-.venv/bin/python -m claudetray --demo            # datos de ejemplo, panel fijo
-.venv/bin/python -m claudetray --demo --bubble   # probar el modo burbuja (no se guarda)
-.venv/bin/python -m claudetray --demo --history  # historial de ejemplo (en un archivo temporal)
-.venv/bin/python -m claudetray --demo --pet      # ficha de la mascota (mascota temporal, nivel 3)
-.venv/bin/python -m claudetray --demo --question # una pregunta con opciones
-.venv/bin/python -m claudetray --demo --usage    # el gráfico de consumo por día
-tools/e2e_ask.sh /ruta/salida                    # prueba real de AskUserQuestion con Claude Code (Konsole aparte)
-tools/demo.sh                           # eventos de prueba a través del hook real
-tools/shoot.sh /ruta/salida             # captura con un fondo de colores (sin tus ventanas)
+uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python PySide6-Essentials pytest
+.venv/bin/python -m pytest                          # tests
+.venv/bin/python -m claudetray --demo               # datos de ejemplo (también: --bubble, --pet, --question, --usage, --history)
+tools/test_distros.sh                               # el instalador en Ubuntu, Debian, Fedora y Arch (Docker)
+tools/e2e_ask.sh /ruta/salida                       # prueba real de AskUserQuestion con Claude Code (Konsole aparte)
+tools/docs_shots.sh                                 # regenera las capturas de docs/img
+python3 tools/make_sounds.py                        # regenera los sonidos
 ```
 
 Estructura:
 
-- `hook/`: scripts que ejecuta Claude Code (solo stdlib, unos 20 ms).
+- `hook/`: los scripts que ejecuta Claude Code. Solo usan la biblioteca estándar y tardan unos 20 ms.
 - `claudetray/`: la app (PySide6 + QML).
-  - `bridge.py`: socket local.
-  - `state.py`: sesiones y consumo.
-  - `pet.py`: la mascota tamagotchi (necesidades, nivel, acciones, ánimo y frases), sin Qt.
-  - `usagehist.py`: tokens por día leídos de `~/.claude/projects/**/*.jsonl` (incremental, en segundo plano).
-  - `history.py`: historial de decisiones y estadísticas (JSONL en `~/.local/share/claude-tray/`).
-  - `describe.py`: resumen de cada herramienta y detección de comandos destructivos.
-  - `glass.py`: desenfoque y *vibrancy* de KWin vía libX11.
-  - `focus.py`: Konsole por DBus y `wmctrl`.
-  - `workarea.py`: área útil real descontando los paneles (Qt la informa mal con varios monitores).
+  - `app.py`: el controlador.
+  - `bridge.py`: el socket.
+  - `state.py`: las sesiones y el consumo.
+  - `pet.py`: la mascota.
+  - `history.py`: el historial.
+  - `usagehist.py`: los tokens por día.
+  - `describe.py`: el resumen de cada herramienta y la detección de comandos destructivos.
+  - `glass.py`: el desenfoque de KWin.
+  - `hotkeys.py`: los atajos de X11.
+  - `focus.py`: la integración con la terminal.
+  - `sound.py`: los sonidos.
   - `qml/`: la interfaz.
+- `install.py`: el instalador.
+
+## Licencia
+
+Pendiente de definir.
