@@ -33,6 +33,9 @@ DEFAULTS = {
     # Sonidos por tipo de aviso y volumen (0-100).
     "sounds": {"permission": True, "question": True, "done": True, "fail": True},
     "sound_volume": 70,
+    # Atajos globales (X11 los registra la app; en Wayland se asignan los comandos en el escritorio).
+    "global_shortcuts": True,
+    "shortcuts": {"allow": "Super+Shift+A", "deny": "Super+Shift+D", "panel": "Super+Shift+C"},
     # Silencio: 0 = avisos activos, -1 = indefinido, o epoch hasta cuando.
     "muted_until": 0,
     # Comando de status line previo, para encadenarlo.

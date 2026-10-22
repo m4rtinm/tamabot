@@ -16,6 +16,7 @@ from PySide6.QtQuick import QQuickWindow
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from . import config, focus, glass, sound, workarea
+from .hotkeys import GlobalHotkeys, is_x11
 from .bridge import Bridge, another_instance_running
 from .describe import describe
 from .history import History
@@ -83,6 +84,8 @@ class Controller(QObject):
     petChanged = Signal()
     mutedChanged = Signal()
     soundsChanged = Signal()
+    shortcutsChanged = Signal()
+    _hotkey = Signal(str)          # lo emite el hilo de los atajos; se atiende en el hilo principal
     historyChanged = Signal()
     petStateChanged = Signal()
     dailyChanged = Signal()
@@ -108,6 +111,7 @@ class Controller(QObject):
         self._angle = 0.0
         self._blur_jobs = {}
         self._laying_out = False
+        self.hotkeys = None              # se registran despues de crear la bandeja
         self._phase = 0
         self._tray_key = None
         self._last_done = (0.0, "", False)   # (cuando, proyecto, fue larga) del ultimo "terminado"
@@ -136,6 +140,12 @@ class Controller(QObject):
             raise SystemExit("\n".join(e.toString() for e in self._toast_comp.errors()))
 
         self._build_tray()
+        self._hotkey.connect(lambda action: self.control(action))
+        if self.cfg.get("global_shortcuts", True):
+            binds = {**config.DEFAULTS["shortcuts"], **(self.cfg.get("shortcuts") or {})}
+            self.hotkeys = GlobalHotkeys(binds, self._hotkey.emit)
+            self.hotkeys.start()
+            self.shortcutsChanged.emit()
 
         self._scan = QTimer(self, interval=2000, timeout=self._rescan)
         self._scan.start()
@@ -454,6 +464,9 @@ class Controller(QObject):
             self._publish()
             if notice and self.cfg.get("notify_done") and not self._muted() and not self._toast_for_session(notice["sid"]):
                 self._show_info(notice)
+        elif kind == "control":
+            ok, message = self.control(str(msg.get("action", "")))
+            self.bridge.reply(cid, {"ok": ok, "message": message})
         elif kind in ("permission", "question") and len(self._req) >= MAX_PENDING:
             log.warning("Demasiadas solicitudes abiertas; esta se devuelve a la terminal")
             self.bridge.reply(cid, {})
@@ -722,6 +735,52 @@ class Controller(QObject):
         self._resolve(cid, {"behavior": "deny", "message": "El usuario rechazó esta acción desde Claude Tray."},
                       outcome="deny")
 
+    # --- atajos / comandos externos -------------------------------------------
+    def _latest(self, kind=None):
+        reqs = [r["item"] for r in self._req.values() if kind is None or r["item"]["kind"] == kind]
+        return max(reqs, key=lambda i: i["created"]) if reqs else None
+
+    def control(self, action):
+        """Acciones de los atajos y de `claude-tray --allow` etc. Devuelve (ok, mensaje)."""
+        if action == "panel":
+            self.togglePanel_from_shortcut()
+            return True, "Panel"
+        if action in ("allow", "deny"):
+            item = self._latest("permission")
+            if item is None:
+                return False, "No hay solicitudes de permiso pendientes."
+            if action == "allow" and item["danger"]:
+                # un atajo nunca aprueba algo destructivo: eso exige mantener el boton presionado
+                self._say = ("Esa es delicada: apruébala desde la notificación.", time.time() + 5, "action")
+                self.summaryChanged.emit()
+                return False, "Es un comando destructivo: apruébalo desde la notificación."
+            (self.allow if action == "allow" else self.deny)(item["id"])
+            return True, f"{'Permitido' if action == 'allow' else 'Rechazado'}: {item['title']} en {item['project']}"
+        if action == "terminal":
+            item = self._latest()
+            if item is None:
+                return False, "No hay nada pendiente."
+            self.toTerminal(item["id"])
+            return True, f"Enviado a la terminal: {item['title']}"
+        return False, f"Acción desconocida: {action}"
+
+    def togglePanel_from_shortcut(self):
+        if self.panel.property("visible"):
+            self.panel.setProperty("visible", False)
+        else:
+            self.openPanel(at_cursor=False)
+
+    def _shortcuts_info(self):
+        binds = {**config.DEFAULTS["shortcuts"], **(self.cfg.get("shortcuts") or {})}
+        hk = self.hotkeys
+        return {
+            "x11": is_x11(),
+            "enabled": bool(self.cfg.get("global_shortcuts", True)),
+            "items": [{"action": a, "keys": k,
+                       "active": bool(hk and a in hk.active),
+                       "reason": (hk.failed.get(a, "") if hk else "desactivados")} for a, k in binds.items()],
+        }
+
     @Slot(str, "QVariantMap")
     def answerQuestion(self, cid, answers):
         req = self._req.get(cid)
@@ -848,6 +907,7 @@ class Controller(QObject):
     toastPosition = Property(str, _toast_position, notify=toastPositionChanged)
     pet = Property("QVariantMap", _pet, notify=petChanged)
     muted = Property(bool, _muted, notify=mutedChanged)
+    shortcuts = Property("QVariantMap", _shortcuts_info, notify=shortcutsChanged)
     sounds = Property("QVariantMap", _sounds, notify=soundsChanged)
     soundVolume = Property(int, lambda self: int(self.cfg.get("sound_volume", 70)), notify=soundsChanged)
     canPlaySound = Property(bool, lambda self: sound.available(), constant=True)
@@ -876,7 +936,41 @@ def setup_logging():
     qInstallMessageHandler(qt_messages)
 
 
+CONTROL_FLAGS = {"--allow": "allow", "--deny": "deny", "--panel": "panel", "--terminal": "terminal"}
+
+
+def send_control(action):
+    """`claude-tray --allow` etc.: le pide la accion a la app abierta por el socket."""
+    import json
+    import socket
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.settimeout(3)
+        s.connect(config.SOCKET_PATH)
+        s.sendall((json.dumps({"kind": "control", "action": action}) + "\n").encode())
+        buf = b""
+        while b"\n" not in buf:
+            chunk = s.recv(65536)
+            if not chunk:
+                break
+            buf += chunk
+        reply = json.loads(buf.split(b"\n")[0] or b"{}")
+    except (OSError, ValueError):
+        print("Claude Tray no está abierto.")
+        return 2
+    print(reply.get("message", ""))
+    return 0 if reply.get("ok") else 1
+
+
 def main():
+    for flag, action in CONTROL_FLAGS.items():
+        if flag in sys.argv:
+            try:
+                config.secure_runtime()
+            except (RuntimeError, OSError) as exc:
+                print(exc)
+                return 2
+            return send_control(action)
     os.umask(0o077)                      # todo lo que crea la app queda solo para su dueño
     config.private_dirs()
     setup_logging()

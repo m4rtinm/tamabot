@@ -404,6 +404,51 @@ Window {
                                    text: Math.round(volTrack.value * 100) + " %"; width: 38; horizontalAlignment: Text.AlignRight
                                    color: T.text2; font.pixelSize: 12 }
                         }
+                        // --- atajos de teclado
+                        Column {
+                            width: parent.width
+                            spacing: 4
+                            Text { textFormat: Text.PlainText; text: "Atajos de teclado"; color: T.text2; font.pixelSize: 12 }
+                            Repeater {
+                                model: ctrl.shortcuts.items
+                                Item {
+                                    width: parent.width; height: 22
+                                    Text {
+                                        textFormat: Text.PlainText
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        leftPadding: 8
+                                        text: ({ allow: "Permitir la última", deny: "Rechazar la última", panel: "Abrir el panel" })[modelData.action] || modelData.action
+                                        color: T.text; font.pixelSize: 12
+                                    }
+                                    Row {
+                                        anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+                                        spacing: 6
+                                        Text {
+                                            textFormat: Text.PlainText
+                                            visible: !modelData.active && ctrl.shortcuts.x11
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: modelData.reason; color: "#FF9F0A"; font.pixelSize: 10
+                                        }
+                                        Rectangle {
+                                            width: keyTxt.implicitWidth + 12; height: 20; radius: 5
+                                            color: T.code; border.width: 1; border.color: T.stroke
+                                            opacity: modelData.active || !ctrl.shortcuts.x11 ? 1 : 0.5
+                                            Text { textFormat: Text.PlainText; id: keyTxt; anchors.centerIn: parent; text: modelData.keys; color: T.text2; font.pixelSize: 11; font.family: MONO }
+                                        }
+                                    }
+                                }
+                            }
+                            Text {
+                                textFormat: Text.PlainText
+                                width: parent.width
+                                leftPadding: 8
+                                wrapMode: Text.Wrap
+                                color: T.text3; font.pixelSize: 11
+                                text: ctrl.shortcuts.x11
+                                      ? "Por seguridad, «Permitir» nunca aprueba comandos destructivos."
+                                      : "En Wayland, asígnalos en los atajos de tu escritorio con los comandos: claude-tray --allow, --deny y --panel."
+                            }
+                        }
                         Item {
                             width: parent.width; height: 28
                             Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: "Icono de la bandeja"; color: T.text2; font.pixelSize: 12 }
