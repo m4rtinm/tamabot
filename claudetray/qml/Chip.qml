@@ -8,6 +8,7 @@ Rectangle {
     radius: 6
     color: warn ? "#33FF9F0A" : T.fill
     Text {
+        textFormat: Text.PlainText   // nunca interpretar HTML del contenido
         id: t
         anchors.centerIn: parent
         color: warn ? "#FF9F0A" : T.text2

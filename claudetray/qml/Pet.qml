@@ -274,6 +274,7 @@ Item {
         width: pet.s * 0.24; height: width; radius: width / 2
         color: pet.emote === "!" ? "#FF9F0A" : "#64D2FF"
         Text {
+            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
             anchors.centerIn: parent
             text: pet.emote
             color: "black"; font.bold: true; font.pixelSize: pet.s * 0.17
@@ -383,6 +384,7 @@ Item {
     Repeater {
         model: 2
         Text {
+            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
             visible: pet.emote === "zz"
             x: pet.s * (0.72 + index * 0.1)
             text: "z"

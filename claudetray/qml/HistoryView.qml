@@ -44,6 +44,7 @@ Column {
             onTextChanged: hv.query = text
         }
         Text {
+            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
             visible: search.text === ""
             anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter }
             text: "Buscar por proyecto, comando o resultado…"
@@ -71,6 +72,7 @@ Column {
                 Item {
                     width: parent.width; height: 17
                     Text {
+                        textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                         id: ttl
                         text: (modelData.project || "") + "  ·  " + (modelData.title || modelData.tool)
                         color: T.text; font.pixelSize: 12; font.weight: Font.DemiBold
@@ -78,6 +80,7 @@ Column {
                         elide: Text.ElideRight
                     }
                     Text {
+                        textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                         id: when
                         anchors.right: parent.right
                         text: U.clock(modelData.ts, hv.now)
@@ -85,6 +88,7 @@ Column {
                     }
                 }
                 Text {
+                    textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                     visible: !!modelData.detail
                     width: parent.width
                     text: modelData.detail || ""
@@ -92,6 +96,7 @@ Column {
                     elide: Text.ElideRight
                 }
                 Text {
+                    textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                     text: U.outcomeLabel(modelData.outcome) + (modelData.danger ? "  ·  destructivo" : "")
                     color: U.outcomeColor(modelData.outcome); font.pixelSize: 11
                 }
@@ -100,6 +105,7 @@ Column {
     }
 
     Text {
+        textFormat: Text.PlainText   // nunca interpretar HTML del contenido
         visible: hv.rows.length === 0
         width: parent.width
         topPadding: 6; bottomPadding: 6

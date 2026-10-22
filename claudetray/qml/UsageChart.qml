@@ -44,6 +44,7 @@ Column {
     Item {
         width: parent.width; height: 28
         Text {
+            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
             anchors.verticalCenter: parent.verticalCenter
             leftPadding: 2
             text: "Tokens por día"
@@ -62,6 +63,7 @@ Column {
                         width: rl.implicitWidth + 18; height: 22; radius: 6
                         color: uc.days === modelData ? T.fillPress : "transparent"
                         Text {
+                            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                             id: rl; anchors.centerIn: parent
                             text: modelData + " días"
                             color: uc.days === modelData ? T.text : T.text2
@@ -92,8 +94,8 @@ Column {
                 Column {
                     x: 10; anchors.verticalCenter: parent.verticalCenter
                     spacing: 2
-                    Text { text: modelData.label; color: T.text3; font.pixelSize: 11 }
-                    Text { text: modelData.value; color: T.text; font.pixelSize: 15; font.weight: Font.DemiBold; font.features: { "tnum": 1 } }
+                    Text { textFormat: Text.PlainText; text: modelData.label; color: T.text3; font.pixelSize: 11 }
+                    Text { textFormat: Text.PlainText; text: modelData.value; color: T.text; font.pixelSize: 15; font.weight: Font.DemiBold; font.features: { "tnum": 1 } }
                 }
             }
         }
@@ -119,6 +121,7 @@ Column {
                 width: chart.width; height: 1
                 Rectangle { x: chart.axisW; width: chart.width - chart.axisW; height: 1; color: T.fill }
                 Text {
+                    textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                     anchors { right: parent.left; rightMargin: -chart.axisW + 6; verticalCenter: parent.verticalCenter }
                     text: uc.fmt(v); color: T.text3; font.pixelSize: 10
                 }
@@ -146,7 +149,7 @@ Column {
                         Behavior on opacity { NumberAnimation { duration: 120 } }
                     }
                 }
-                Text {                // etiquetas del eje x (todas en 7 dias, una de cada 5 en 30)
+                Text { textFormat: Text.PlainText;                // etiquetas del eje x (todas en 7 dias, una de cada 5 en 30)
                     visible: uc.days === 7 || index % 5 === (uc.rows.length - 1) % 5
                     anchors.horizontalCenter: parent.horizontalCenter
                     y: chart.plotH + 5
@@ -179,12 +182,13 @@ Column {
                 x: 10; y: 8
                 spacing: 2
                 Text {
+                    textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                     text: tip.r ? uc.dayLabel(tip.r.date, true) + " · " + uc.fmt(tip.r.total) + " tokens" : ""
                     color: T.text; font.pixelSize: 12; font.weight: Font.DemiBold
                 }
-                Text { text: tip.r ? "Entrada " + uc.fmt(tip.r.input) + "  ·  salida " + uc.fmt(tip.r.output) : ""; color: T.text2; font.pixelSize: 11 }
-                Text { text: tip.r ? "Caché: escrito " + uc.fmt(tip.r.cache_write) + "  ·  leído " + uc.fmt(tip.r.cache_read) : ""; color: T.text2; font.pixelSize: 11 }
-                Text { text: tip.r ? tip.r.messages + " respuestas" : ""; color: T.text3; font.pixelSize: 11 }
+                Text { textFormat: Text.PlainText; text: tip.r ? "Entrada " + uc.fmt(tip.r.input) + "  ·  salida " + uc.fmt(tip.r.output) : ""; color: T.text2; font.pixelSize: 11 }
+                Text { textFormat: Text.PlainText; text: tip.r ? "Caché: escrito " + uc.fmt(tip.r.cache_write) + "  ·  leído " + uc.fmt(tip.r.cache_read) : ""; color: T.text2; font.pixelSize: 11 }
+                Text { textFormat: Text.PlainText; text: tip.r ? tip.r.messages + " respuestas" : ""; color: T.text3; font.pixelSize: 11 }
             }
         }
     }
@@ -198,8 +202,8 @@ Column {
             model: uc.asTable ? uc.rows.slice().reverse() : []
             Item {
                 width: uc.width; height: 22
-                Text { text: uc.dayLabel(modelData.date, true) + (index === 0 ? " (hoy)" : ""); color: T.text2; font.pixelSize: 12 }
-                Text { anchors.right: parent.right; text: uc.fmt(modelData.total) + "  ·  " + modelData.messages + " resp."; color: T.text; font.pixelSize: 12; font.features: { "tnum": 1 } }
+                Text { textFormat: Text.PlainText; text: uc.dayLabel(modelData.date, true) + (index === 0 ? " (hoy)" : ""); color: T.text2; font.pixelSize: 12 }
+                Text { textFormat: Text.PlainText; anchors.right: parent.right; text: uc.fmt(modelData.total) + "  ·  " + modelData.messages + " resp."; color: T.text; font.pixelSize: 12; font.features: { "tnum": 1 } }
             }
         }
     }
@@ -207,12 +211,14 @@ Column {
     Item {
         width: parent.width; height: 20
         Text {
+            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
             anchors.verticalCenter: parent.verticalCenter
             text: "Entrada + salida + caché escrita · registros locales"
             color: T.text3; font.pixelSize: 10
             width: parent.width - toggle.width - 8; elide: Text.ElideRight
         }
         Text {
+            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
             id: toggle
             anchors { right: parent.right; verticalCenter: parent.verticalCenter }
             text: uc.asTable ? "Ver gráfico" : "Ver tabla"

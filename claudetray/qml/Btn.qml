@@ -38,6 +38,7 @@ Rectangle {
     }
 
     Text {
+        textFormat: Text.PlainText   // nunca interpretar HTML del contenido
         id: label
         anchors.centerIn: parent
         text: b.hold && b.progress === 0 && !ma.pressed ? "Mantén: " + b.text : b.text

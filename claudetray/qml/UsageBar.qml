@@ -12,8 +12,9 @@ Column {
     Item {
         width: parent.width
         height: name.implicitHeight
-        Text { id: name; text: u.label; color: T.text; font.pixelSize: 13; font.weight: Font.Medium }
+        Text { textFormat: Text.PlainText; id: name; text: u.label; color: T.text; font.pixelSize: 13; font.weight: Font.Medium }
         Text {
+            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
             anchors.right: parent.right
             text: u.pct < 0 ? "—" : Math.round(u.pct) + " %"
             color: u.pct >= 70 ? U.levelColor(u.pct) : T.text
@@ -38,6 +39,7 @@ Column {
     }
 
     Text {
+        textFormat: Text.PlainText   // nunca interpretar HTML del contenido
         text: u.pct < 0 ? "Sin datos todavía"
             : u.resets > 0 ? "Se reinicia " + U.until(u.resets, u.now) : "Ventana reiniciada"
         color: T.text3

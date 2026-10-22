@@ -36,6 +36,7 @@ Rectangle {
             height: Math.max(proj.implicitHeight, 16)
             StatusDot { id: dot; status: s.state; anchors.verticalCenter: parent.verticalCenter; width: 8; height: 8 }
             Text {
+                textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                 id: proj
                 anchors { left: dot.right; leftMargin: 9; verticalCenter: parent.verticalCenter }
                 text: s.project
@@ -45,6 +46,7 @@ Rectangle {
                 elide: Text.ElideRight
             }
             Text {
+                textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                 anchors { left: proj.right; leftMargin: 6; right: meta.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
                 text: s.title && s.title !== s.project ? s.title : ""
                 color: T.text3
@@ -52,6 +54,7 @@ Rectangle {
                 elide: Text.ElideRight
             }
             Text {
+                textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                 id: meta
                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
                 text: U.ago(s.updated, row.now)
@@ -61,6 +64,7 @@ Rectangle {
         }
 
         Text {
+            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
             x: 17
             width: parent.width - 17
             text: s.activity || U.stateLabel(s.state)
@@ -105,6 +109,7 @@ Rectangle {
                 wrapMode: Text.Wrap; maximumLineCount: 5; elide: Text.ElideRight
             }
             Text {
+                textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                 width: parent.width
                 text: s.cwd
                 color: T.text3; font.pixelSize: 11; font.family: MONO
@@ -138,7 +143,7 @@ Rectangle {
                             width: quick.implicitWidth + 16; height: 24; radius: 12
                             color: quickMa.pressed ? T.fillPress : quickMa.containsMouse ? T.fillHover : T.fill
                             border.width: 1; border.color: T.stroke
-                            Text { id: quick; anchors.centerIn: parent; text: modelData; color: T.text; font.pixelSize: 12 }
+                            Text { textFormat: Text.PlainText; id: quick; anchors.centerIn: parent; text: modelData; color: T.text; font.pixelSize: 12 }
                             MouseArea { id: quickMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: msgBox.send(modelData) }
                         }
                     }
@@ -159,6 +164,7 @@ Rectangle {
                             onAccepted: if (text.trim() !== "") msgBox.send(text)
                         }
                         Text {
+                            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                             visible: msgInput.text === ""
                             anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter }
                             text: "Escribir a esta sesión…"
@@ -175,6 +181,7 @@ Rectangle {
                     }
                 }
                 Text {
+                    textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                     visible: msgBox.feedback !== ""
                     text: msgBox.feedback
                     color: msgBox.feedback.indexOf("✓") >= 0 ? "#30D158" : "#FF9F0A"

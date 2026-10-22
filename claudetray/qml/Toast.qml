@@ -103,22 +103,25 @@ Window {
                 width: parent.width; height: 18
                 Glyph { id: ig; width: 16; height: 16; anchors.verticalCenter: parent.verticalCenter }
                 Text {
+                    textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                     anchors { left: ig.right; leftMargin: 7; verticalCenter: parent.verticalCenter }
                     text: "CLAUDE CODE"
                     color: T.text2; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 0.4
                 }
-                Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: "ahora"; color: T.text3; font.pixelSize: 11 }
+                Text { textFormat: Text.PlainText; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: "ahora"; color: T.text3; font.pixelSize: 11 }
             }
             Row {
                 spacing: 7
                 topPadding: 4
                 StatusDot { status: w.item && w.item.kind === "done" ? "done" : "waiting"; width: 8; height: 8; anchors.verticalCenter: parent.verticalCenter }
                 Text {
+                    textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                     text: w.item ? w.item.title : ""; color: T.text; font.pixelSize: 14; font.weight: Font.DemiBold
                     width: Math.min(implicitWidth, info.width - 16); elide: Text.ElideRight
                 }
             }
             Text {
+                textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                 visible: text !== ""
                 width: parent.width
                 text: w.item ? w.item.body : ""

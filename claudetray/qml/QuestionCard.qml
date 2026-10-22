@@ -57,6 +57,7 @@ Column {
         height: 18
         Glyph { id: g; width: 16; height: 16; anchors.verticalCenter: parent.verticalCenter; visible: !qc.compact }
         Text {
+            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
             anchors { left: qc.compact ? parent.left : g.right; leftMargin: qc.compact ? 0 : 7; verticalCenter: parent.verticalCenter }
             width: parent.width - (qc.compact ? 0 : 23) - ago.implicitWidth - 8
             elide: Text.ElideRight
@@ -66,6 +67,7 @@ Column {
             font.letterSpacing: qc.compact ? 0 : 0.4
         }
         Text {
+            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
             id: ago
             anchors { right: parent.right; verticalCenter: parent.verticalCenter }
             text: item ? U.ago(item.created, qc.now) : ""
@@ -86,6 +88,7 @@ Column {
                 spacing: 6
                 Chip { visible: !!modelData.header; text: modelData.header || "" }
                 Text {
+                    textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                     visible: qBlock.multi
                     anchors.verticalCenter: parent.verticalCenter
                     text: "Puedes elegir varias"
@@ -93,6 +96,7 @@ Column {
                 }
             }
             Text {
+                textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                 width: parent.width
                 text: modelData.question
                 color: T.text
@@ -125,6 +129,7 @@ Column {
                             width: 6; height: 6; radius: 3; color: "white"
                         }
                         Text {
+                            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                             visible: opt.picked && qBlock.multi
                             anchors.centerIn: parent
                             text: "✓"; color: "white"; font.pixelSize: 11; font.bold: true
@@ -136,12 +141,14 @@ Column {
                         width: parent.width - 44
                         spacing: 1
                         Text {
+                            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                             width: parent.width
                             text: modelData.label
                             color: T.text; font.pixelSize: 13; font.weight: Font.Medium
                             wrapMode: Text.Wrap
                         }
                         Text {
+                            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                             visible: !!modelData.description
                             width: parent.width
                             text: modelData.description || ""
@@ -177,6 +184,7 @@ Column {
                     onActiveFocusChanged: if (activeFocus) qc.wantsFocus()
                 }
                 Text {
+                    textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                     visible: otherInput.text === ""
                     anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter }
                     text: "Otra respuesta…"

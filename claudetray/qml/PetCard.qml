@@ -21,6 +21,7 @@ Column {
             Item {
                 width: parent.width; height: 22
                 Text {
+                    textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                     anchors.verticalCenter: parent.verticalCenter
                     text: "Experiencia"
                     color: T.text; font.pixelSize: 14; font.weight: Font.DemiBold
@@ -30,7 +31,7 @@ Column {
                     width: lvl.implicitWidth + 16; height: 22; radius: 11
                     color: "#33D97757"
                     border.width: 1; border.color: "#66D97757"
-                    Text { id: lvl; anchors.centerIn: parent; text: "Nivel " + pc.st.level; color: "#F0A585"; font.pixelSize: 12; font.weight: Font.Bold }
+                    Text { textFormat: Text.PlainText; id: lvl; anchors.centerIn: parent; text: "Nivel " + pc.st.level; color: "#F0A585"; font.pixelSize: 12; font.weight: Font.Bold }
                 }
             }
             Rectangle {
@@ -48,6 +49,7 @@ Column {
                 }
             }
             Text {
+                textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                 text: pc.st.xp + " XP · faltan " + pc.st.toNext + " para el nivel " + (pc.st.level + 1)
                 color: T.text3; font.pixelSize: 11
             }
@@ -83,6 +85,7 @@ Column {
 
     // --- acciones
     Text {
+        textFormat: Text.PlainText   // nunca interpretar HTML del contenido
         text: "DAR DE COMER"
         color: T.text2; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 0.5
         leftPadding: 2
@@ -102,6 +105,7 @@ Column {
                     spacing: 7
                     FoodIcon { kind: modelData.key; size: 20; anchors.verticalCenter: parent.verticalCenter }
                     Text {
+                        textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                         anchors.verticalCenter: parent.verticalCenter
                         text: modelData.name.charAt(0).toUpperCase() + modelData.name.slice(1)
                         color: T.text; font.pixelSize: 13; font.weight: Font.Medium
@@ -131,8 +135,9 @@ Column {
         spacing: 5
         Item {
             width: parent.width; height: 16
-            Text { text: label; color: T.text; font.pixelSize: 12; font.weight: Font.Medium }
+            Text { textFormat: Text.PlainText; text: label; color: T.text; font.pixelSize: 12; font.weight: Font.Medium }
             Text {
+                textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                 anchors.right: parent.right
                 text: Math.round(value) + " %"
                 color: value < 25 ? "#FF9F0A" : T.text2

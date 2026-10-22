@@ -16,6 +16,7 @@ Column {
         height: 18
         Glyph { id: g; width: 16; height: 16; anchors.verticalCenter: parent.verticalCenter; visible: !card.compact }
         Text {
+            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
             anchors { left: card.compact ? parent.left : g.right; leftMargin: card.compact ? 0 : 7; verticalCenter: parent.verticalCenter }
             width: parent.width - (card.compact ? 0 : 23) - agoText.implicitWidth - 8
             elide: Text.ElideRight
@@ -25,6 +26,7 @@ Column {
             font.letterSpacing: card.compact ? 0 : 0.4
         }
         Text {
+            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
             id: agoText
             anchors { right: parent.right; verticalCenter: parent.verticalCenter }
             text: item ? U.ago(item.created, card.now) : ""
@@ -39,6 +41,7 @@ Column {
             spacing: 8
             width: parent.width
             Text {
+                textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                 text: item ? item.title : ""
                 color: T.text
                 font.pixelSize: 14; font.weight: Font.DemiBold
@@ -51,10 +54,11 @@ Column {
                 anchors.verticalCenter: parent.verticalCenter
                 width: warn.implicitWidth + 12; height: 18; radius: 6
                 color: "#33FF453A"
-                Text { id: warn; anchors.centerIn: parent; text: "Destructivo"; color: "#FF6961"; font.pixelSize: 11; font.weight: Font.DemiBold }
+                Text { textFormat: Text.PlainText; id: warn; anchors.centerIn: parent; text: "Destructivo"; color: "#FF6961"; font.pixelSize: 11; font.weight: Font.DemiBold }
             }
         }
         Text {
+            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
             visible: text !== ""
             width: parent.width
             text: item ? item.subtitle : ""
@@ -88,6 +92,7 @@ Column {
                 Repeater {
                     model: item ? item.body.split("\n") : []
                     Text {
+                        textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                         width: code.width
                         text: modelData
                         wrapMode: item.bodyKind === "text" ? Text.Wrap : Text.WrapAnywhere

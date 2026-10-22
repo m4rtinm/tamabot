@@ -115,7 +115,7 @@ Window {
                         id: headCol
                         anchors { left: petView.right; leftMargin: 14; right: parent.right; verticalCenter: parent.verticalCenter }
                         spacing: 6
-                        Text {                // nombre: deja libre la zona de los 3 botones
+                        Text { textFormat: Text.PlainText;                // nombre: deja libre la zona de los 3 botones
                             width: parent.width - 104
                             text: ctrl.pet.name
                             color: T.text; font.pixelSize: 16; font.weight: Font.Bold
@@ -137,6 +137,7 @@ Window {
                             }
                             // texto completo, invisible: da el tamaño final del globo desde el principio
                             Text {
+                                textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                                 id: line
                                 x: 11; y: 7
                                 width: speech.parent.width - 22     // ancho maximo; el globo se ajusta al texto real
@@ -149,6 +150,7 @@ Window {
                             }
                             // lo que se ve: aparece letra por letra, como si hablara
                             Text {
+                                textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                                 x: 11; y: 7
                                 width: line.width
                                 text: panel.fullLine.substring(0, panel.typed)
@@ -165,6 +167,7 @@ Window {
                             }
                         }
                         Text {
+                            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                             width: parent.width
                             leftPadding: 2
                             elide: Text.ElideRight
@@ -194,12 +197,13 @@ Window {
                             id: backRow
                             anchors.centerIn: parent
                             spacing: 4
-                            Text { text: "‹"; color: T.text; font.pixelSize: 17; anchors.verticalCenter: parent.verticalCenter; topPadding: -2 }
-                            Text { text: "Volver"; color: T.text; font.pixelSize: 13; font.weight: Font.Medium; anchors.verticalCenter: parent.verticalCenter }
+                            Text { textFormat: Text.PlainText; text: "‹"; color: T.text; font.pixelSize: 17; anchors.verticalCenter: parent.verticalCenter; topPadding: -2 }
+                            Text { textFormat: Text.PlainText; text: "Volver"; color: T.text; font.pixelSize: 13; font.weight: Font.Medium; anchors.verticalCenter: parent.verticalCenter }
                         }
                         MouseArea { id: backMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: panel.view = "main" }
                     }
                     Text {
+                        textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                         anchors { left: backBtn.right; leftMargin: 10; verticalCenter: parent.verticalCenter }
                         text: ({ pet: "Ficha de " + ctrl.pet.name, settings: "Ajustes", history: "Historial",
                                  usage: "Consumo por día" })[panel.view] || ""
@@ -221,7 +225,7 @@ Window {
                         spacing: 10
                         Item {
                             width: parent.width; height: 28
-                            Text { anchors.verticalCenter: parent.verticalCenter; text: "Nombre"; color: T.text2; font.pixelSize: 12 }
+                            Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: "Nombre"; color: T.text2; font.pixelSize: 12 }
                             Rectangle {
                                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
                                 width: 190; height: 28; radius: 8
@@ -240,7 +244,7 @@ Window {
                         }
                         Item {
                             width: parent.width; height: 26
-                            Text { anchors.verticalCenter: parent.verticalCenter; text: "Color"; color: T.text2; font.pixelSize: 12 }
+                            Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: "Color"; color: T.text2; font.pixelSize: 12 }
                             Row {
                                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
                                 spacing: 8
@@ -258,7 +262,7 @@ Window {
                         }
                         Item {
                             width: parent.width; height: 30
-                            Text { anchors.verticalCenter: parent.verticalCenter; text: "Accesorio"; color: T.text2; font.pixelSize: 12 }
+                            Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: "Accesorio"; color: T.text2; font.pixelSize: 12 }
                             Row {
                                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
                                 spacing: 3
@@ -272,6 +276,7 @@ Window {
                                         border.width: ctrl.pet.accessory === modelData ? 1 : 0
                                         border.color: T.stroke
                                         Text {
+                                            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                                             visible: modelData === ""
                                             anchors.centerIn: parent; text: "∅"; color: T.text2; font.pixelSize: 15
                                         }
@@ -299,7 +304,7 @@ Window {
                                             anchors { right: parent.right; bottom: parent.bottom; margins: 1 }
                                             width: lockTxt.implicitWidth + 6; height: 13; radius: 6
                                             color: "#CC1C1C1E"
-                                            Text { id: lockTxt; anchors.centerIn: parent; text: "Nv " + ctrl.petState.unlocks[modelData]; color: "white"; font.pixelSize: 8; font.bold: true }
+                                            Text { textFormat: Text.PlainText; id: lockTxt; anchors.centerIn: parent; text: "Nv " + ctrl.petState.unlocks[modelData]; color: "white"; font.pixelSize: 8; font.bold: true }
                                         }
                                         MouseArea {
                                             id: accMa
@@ -317,6 +322,7 @@ Window {
                         width: parent.width
                         height: 30
                         Text {
+                            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                             anchors.verticalCenter: parent.verticalCenter
                             leftPadding: 2
                             text: "Notificaciones"
@@ -347,7 +353,7 @@ Window {
                     }
                         Item {
                             width: parent.width; height: 28
-                            Text { anchors.verticalCenter: parent.verticalCenter; text: "Icono de la bandeja"; color: T.text2; font.pixelSize: 12 }
+                            Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: "Icono de la bandeja"; color: T.text2; font.pixelSize: 12 }
                             Row {
                                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
                                 spacing: 6
@@ -379,6 +385,7 @@ Window {
                         onClicked: { panel.view = "usage"; ctrl.refreshDaily() }
                     }
                     Text {
+                        textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                         anchors { right: parent.right; rightMargin: 12; bottom: parent.bottom; bottomMargin: 8 }
                         text: "Ver por día ›"
                         color: T.text3; font.pixelSize: 10
@@ -448,6 +455,7 @@ Window {
                     width: parent.width
                     height: 28
                     Text {
+                        textFormat: Text.PlainText   // nunca interpretar HTML del contenido
                         anchors.verticalCenter: parent.verticalCenter
                         color: T.text3; font.pixelSize: 11
                         text: {
@@ -469,6 +477,7 @@ Window {
         implicitWidth: segText.implicitWidth + 22
         implicitHeight: 24
         Text {
+            textFormat: Text.PlainText   // nunca interpretar HTML del contenido
             id: segText
             anchors.centerIn: parent
             color: ctrl.toastPosition === parent.key ? T.text : T.text2
@@ -484,13 +493,13 @@ Window {
         property bool accent: false
         spacing: 6
         leftPadding: 2
-        Text { id: lbl; color: T.text2; font.pixelSize: 12; font.weight: Font.DemiBold; font.capitalization: Font.AllUppercase; font.letterSpacing: 0.5 }
+        Text { textFormat: Text.PlainText; id: lbl; color: T.text2; font.pixelSize: 12; font.weight: Font.DemiBold; font.capitalization: Font.AllUppercase; font.letterSpacing: 0.5 }
         Rectangle {
             visible: count > 0
             anchors.verticalCenter: parent.verticalCenter
             width: Math.max(16, cnt.implicitWidth + 8); height: 16; radius: 8
             color: accent ? "#FF9F0A" : T.fillHover
-            Text { id: cnt; anchors.centerIn: parent; text: count; color: accent ? "black" : T.text2; font.pixelSize: 10; font.weight: Font.Bold }
+            Text { textFormat: Text.PlainText; id: cnt; anchors.centerIn: parent; text: count; color: accent ? "black" : T.text2; font.pixelSize: 10; font.weight: Font.Bold }
         }
     }
 }
