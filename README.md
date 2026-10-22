@@ -45,7 +45,7 @@ Traychi se conecta a Claude Code con sus **hooks** oficiales: pequeños scripts 
   <tr>
     <td width="52%"><img src="docs/svg/permisos.svg" alt="Notificaciones de permiso"></td>
     <td>
-      <h3>🛡️ Aprobar o rechazar</h3>
+      <h3>Aprobar o rechazar</h3>
       Cada solicitud llega como notificación, con el <b>comando o el diff a la vista</b>.
       <ul>
         <li><b>Permitir</b>, <b>Rechazar</b>, <b>Siempre</b> (aplica la regla que sugiere Claude) o <b>Terminal</b>.</li>
@@ -56,7 +56,7 @@ Traychi se conecta a Claude Code con sus **hooks** oficiales: pequeños scripts 
   </tr>
   <tr>
     <td>
-      <h3>💬 Responder sus preguntas</h3>
+      <h3>Responder sus preguntas</h3>
       Cuando Claude pregunta con opciones, contestas desde la notificación:
       <ul>
         <li>Opción única o varias.</li>
@@ -68,7 +68,7 @@ Traychi se conecta a Claude Code con sus **hooks** oficiales: pequeños scripts 
   <tr>
     <td width="52%"><img src="docs/svg/sesiones.svg" alt="Lista de sesiones"></td>
     <td>
-      <h3>🖥️ Todas tus sesiones</h3>
+      <h3>Todas tus sesiones</h3>
       De un vistazo: cuál <b>trabaja</b>, cuál <b>te espera</b> y cuál <b>terminó</b>, con la última herramienta, el modelo y el contexto usado.
       <ul>
         <li><b>Ir a la terminal</b>: salta a la pestaña exacta en Konsole.</li>
@@ -78,7 +78,7 @@ Traychi se conecta a Claude Code con sus **hooks** oficiales: pequeños scripts 
   </tr>
   <tr>
     <td>
-      <h3>📊 Consumo en tiempo real</h3>
+      <h3>Consumo en tiempo real</h3>
       Las ventanas de <b>5 horas y 7 días</b> de tu plan, con la hora de reinicio, y un gráfico de <b>tokens por día</b> (7 o 30 días).
       <ul>
         <li>La mascota te avisa si hoy vas muy por encima de tu promedio.</li>
@@ -90,7 +90,7 @@ Traychi se conecta a Claude Code con sus **hooks** oficiales: pequeños scripts 
   <tr>
     <td width="52%"><img src="docs/svg/atajos.svg" alt="Atajos de teclado"></td>
     <td>
-      <h3>⌨️ Sin tocar el mouse</h3>
+      <h3>Sin tocar el mouse</h3>
       Atajos globales para permitir, rechazar o abrir el panel.
       <ul>
         <li>Se registran solos en X11.</li>
@@ -158,12 +158,12 @@ Funciona en cualquier distribución con escritorio gráfico. Lo que cambia segú
 
 | | KDE Plasma | GNOME | XFCE, Cinnamon, MATE… |
 |---|:---:|:---:|:---:|
-| Icono en la bandeja | ✅ | con la extensión [AppIndicator](https://extensions.gnome.org/extension/615/) | ✅ |
-| Notificaciones, panel y mascota | ✅ | ✅ | ✅ |
-| Vidrio con desenfoque real | ✅ | translúcido | translúcido |
-| Atajos de teclado | ✅ | ✅ | ✅ en X11 |
-| Ir a la pestaña exacta | ✅ Konsole | ventana | ventana |
-| Escribirle a una sesión | ✅ Konsole | — | — |
+| Icono en la bandeja | Sí | con la extensión [AppIndicator](https://extensions.gnome.org/extension/615/) | Sí |
+| Notificaciones, panel y mascota | Sí | Sí | Sí |
+| Vidrio con desenfoque real | Sí | translúcido | translúcido |
+| Atajos de teclado | Sí | Sí | Sí, en X11 |
+| Ir a la pestaña exacta | Sí (Konsole) | ventana | ventana |
+| Escribirle a una sesión | Sí (Konsole) | — | — |
 
 En Wayland, la app usa XWayland (incluido en todos los escritorios) para poder ubicar las notificaciones. Probado a fondo en KDE Plasma 5 (X11), y el instalador en Ubuntu 24.04, Debian 12, Fedora 41 y Arch.
 
@@ -189,7 +189,7 @@ Haz clic en el icono de la bandeja para abrir el panel.
 
 ## Privacidad y seguridad
 
-- 🔒 **Todo es local.** La app no se conecta a internet ni usa la API: **no consume tokens**. Solo descarga PySide6 al instalar.
+- **Todo es local.** La app no se conecta a internet ni usa la API: **no consume tokens**. Solo descarga PySide6 al instalar.
 - A Claude solo le llega tu decisión, igual que si contestaras en la terminal.
 - La comunicación va por un **socket Unix privado** (`$XDG_RUNTIME_DIR`). Sin esa variable usa `/tmp`, pero solo si la carpeta es tuya y privada.
 - Tus datos (historial, mascota, configuración, log) quedan **solo legibles para ti**, en `~/.local/share/traychi`, `~/.config/traychi` y `~/.cache/traychi`.
