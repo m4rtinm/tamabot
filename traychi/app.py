@@ -22,7 +22,7 @@ from .describe import describe
 from .history import History
 from .usagehist import DailyUsage
 from .pet import FOODS, LEGACY_ACCESSORIES, PetState, compute_mood, pet_line, reaction
-from .icon import pet_icon, tray_icon
+from .icon import DESIGN_COLORS, pet_icon, tray_icon
 from .listmodel import DictListModel
 from .state import SessionTracker, Usage, now_ms
 
@@ -330,8 +330,9 @@ class Controller(QObject):
             phase = (self._phase // speed) % 24
             if mood == "idle":          # quieto, con un parpadeo de vez en cuando
                 phase = 0 if phase == 0 else 1
-            key = ("pet", mood, emote, phase, pet["color"], muted)
-            make = lambda: pet_icon(mood, phase, pet["color"], muted=muted, emote=emote)
+            design = pet.get("design", "clawd")
+            key = ("pet", design, mood, emote, phase, pet["color"], muted)
+            make = lambda: pet_icon(mood, phase, pet["color"], muted=muted, emote=emote, design=design)
         if force or key != self._tray_key:
             self._tray_key = key
             self.tray.setIcon(make())
@@ -410,6 +411,10 @@ class Controller(QObject):
             value = value.strip()[:18] or "Clawd"
         if key == "accessory" and value not in self.petstate.unlocked():
             return
+        if key == "design":
+            if value not in DESIGN_COLORS:
+                return
+            pet["color"] = DESIGN_COLORS[value]          # cada diseño parte con su color
         pet[key] = value
         self.cfg["pet"] = pet
         config.save(self.cfg)

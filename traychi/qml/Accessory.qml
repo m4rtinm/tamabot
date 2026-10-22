@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Shapes
 
 // Accesorios de la mascota dibujados en vectores, en un espacio de 100x100
-// alineado con Pet.qml (cuerpo: x 13..87, y 28..74; ojos en ~39 y ~63, y ~49).
+// alineado con Pet.qml (cuerpo: x 12..88, y 26..86; ojos en 38 y 62, y ~47).
 Item {
     id: acc
     property string kind: ""
@@ -58,8 +58,8 @@ Item {
     Item {
         visible: acc.kind === "glasses"
         anchors.fill: parent
-        Rectangle { x: 13; y: 46; width: 19; height: 2.4; color: "#1C1C1E" }
-        Rectangle { x: 71; y: 46; width: 16; height: 2.4; color: "#1C1C1E" }
+        Rectangle { x: 18; y: 46; width: 13; height: 2.4; color: "#1C1C1E" }
+        Rectangle { x: 71; y: 46; width: 12; height: 2.4; color: "#1C1C1E" }
         Rectangle { x: 46; y: 47; width: 10; height: 2.4; color: "#1C1C1E" }
         Rectangle { x: 30; y: 43; width: 18; height: 12; radius: 4; color: "#1C1C1E" }
         Rectangle { x: 54; y: 43; width: 18; height: 12; radius: 4; color: "#1C1C1E" }

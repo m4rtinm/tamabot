@@ -143,7 +143,7 @@ Column {
                         x: chart.gap / 2; width: parent.width - chart.gap
                         y: chart.plotH - h; height: h + 6
                         radius: Math.min(4, width / 2)
-                        color: "#D97757"
+                        color: "#26A96E"
                         opacity: uc.hovered === -1 ? (isToday ? 1 : 0.75) : (uc.hovered === index ? 1 : 0.4)
                         Behavior on y { NumberAnimation { duration: 400; easing.type: Easing.OutCubic } }
                         Behavior on opacity { NumberAnimation { duration: 120 } }
@@ -222,7 +222,7 @@ Column {
             id: toggle
             anchors { right: parent.right; verticalCenter: parent.verticalCenter }
             text: uc.asTable ? "Ver gráfico" : "Ver tabla"
-            color: "#F0A585"; font.pixelSize: 11
+            color: "#7BE8B3"; font.pixelSize: 11
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: uc.asTable = !uc.asTable }
         }
     }

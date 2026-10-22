@@ -11,7 +11,7 @@ Rectangle {
     property real progress: 0
     signal clicked()
 
-    readonly property color base: kind === "accent" ? "#D97757" : kind === "danger" ? "#FF453A" : "transparent"
+    readonly property color base: kind === "accent" ? "#26A96E" : kind === "danger" ? "#FF453A" : "transparent"
     implicitHeight: 28
     implicitWidth: label.implicitWidth + (kind === "quiet" ? 12 : 26)
     radius: 9

@@ -1,7 +1,8 @@
 import QtQuick
 import QtQuick.Shapes
 
-// Mascota estilo Bit.
+// La mascota de Traychi, con dos diseños: "clawd" (el robotito original, por defecto)
+// y "mochi" (el del banner: un mochi con un brote y una mochila con pantalla).
 // mood:  idle | working | thinking | waiting | happy | celebrate | hungry | tired
 //        | sleep | bored | worried | eat | play | love
 // emote: "" | "!" | "?" | sweat | heart | dots | zz | sparkle | confetti | food
@@ -10,13 +11,14 @@ Item {
     property real s: 64
     property string mood: "idle"
     property string emote: ""
+    property string design: "clawd"
     property color bodyColor: "#D97757"
     property string accessory: ""
     property bool talking: false       // mueve la boca mientras aparece su frase
     implicitWidth: s
     implicitHeight: s
 
-    readonly property color eyeColor: "#2B1D17"
+    readonly property color eyeColor: design === "mochi" ? "#2A2320" : "#2B1D17"
     readonly property bool joyful: mood === "happy" || mood === "celebrate" || mood === "love" || mood === "play" || mood === "eat"
 
     // --- propiedades animadas
@@ -41,6 +43,7 @@ Item {
     Behavior on sway { SpringAnimation { spring: 2; damping: 0.2 } }
 
     onMoodChanged: {
+        if (mood === "sleep") leaf = 32          // dormida, el brote se cae
         hop = 0; squash = 1; chomp = 0; spin = 0
         look = mood === "bored" ? 0.8 : 0
         lookUp = mood === "thinking" ? 1 : 0
@@ -136,9 +139,22 @@ Item {
     Rectangle {
         anchors.horizontalCenter: parent.horizontalCenter
         y: pet.s * 0.9
-        width: pet.s * 0.62 * Math.max(0.5, 1 + pet.hop / pet.s * 1.6); height: pet.s * 0.07; radius: height / 2
+        width: pet.s * 0.66 * Math.max(0.5, 1 + pet.hop / pet.s * 1.6); height: pet.s * 0.07; radius: height / 2
         color: "#40000000"
     }
+
+    // el brote se mece; dormido se cae y con alegria se agita
+    property real leaf: 0
+    SequentialAnimation on leaf {
+        running: pet.mood !== "sleep" && pet.design === "mochi"
+        loops: Animation.Infinite
+        NumberAnimation { to: pet.joyful ? 12 : 6; duration: pet.joyful ? 300 : 1600; easing.type: Easing.InOutSine }
+        NumberAnimation { to: pet.joyful ? -12 : -6; duration: pet.joyful ? 300 : 1600; easing.type: Easing.InOutSine }
+    }
+    Behavior on leaf { enabled: pet.mood === "sleep"; SpringAnimation { spring: 2; damping: 0.3 } }
+    // cursor de la pantalla: parpadea mas rapido mientras trabaja
+    property bool cursorOn: true
+    Timer { running: true; repeat: true; interval: pet.mood === "working" || pet.mood === "thinking" ? 280 : 650; onTriggered: pet.cursorOn = !pet.cursorOn }
 
     Item {
         id: bot
@@ -151,6 +167,11 @@ Item {
             yScale: pet.squash
         }
 
+        // ===== diseño "clawd": el robotito original =====
+        Item {
+            id: clawdArt
+            anchors.fill: parent
+            visible: pet.design !== "mochi"
         // patitas
         Repeater {
             model: [0.2, 0.34, 0.6, 0.74]
@@ -258,7 +279,185 @@ Item {
                 color: pet.eyeColor
             }
         }
-        // accesorio (se mueve con el cuerpo)
+        }
+
+        // ===== diseño "mochi": el del banner, dibujado en un lienzo de 100x100 escalado =====
+        Item {
+            id: art
+            visible: pet.design === "mochi"
+            width: 100; height: 100
+            scale: pet.s / 100
+            transformOrigin: Item.TopLeft
+            readonly property color body: pet.bodyColor
+            readonly property color edge: Qt.darker(pet.bodyColor, 1.14)
+            readonly property color ink: pet.eyeColor
+
+            // mochila (detras del cuerpo) y su etiqueta naranja
+            Rectangle { x: 20; y: 34; width: 75; height: 50; radius: 22; color: "#16605D" }
+            Rectangle { x: 89; y: 52; width: 5.5; height: 11; radius: 2; color: "#E47A47"; rotation: -8 }
+
+            // patitas
+            Repeater {
+                model: [21, 59]
+                Rectangle {
+                    x: modelData; y: 79; width: 20; height: 12; radius: 6
+                    color: art.body; border.width: 1; border.color: art.edge
+                }
+            }
+
+            // cuerpo de mochi
+            Shape {
+                anchors.fill: parent
+                preferredRendererType: Shape.CurveRenderer
+                ShapePath {
+                    fillColor: art.body; strokeColor: art.edge; strokeWidth: 1.2
+                    PathSvg { path: "M 50 26 C 74 26 88 40 88 58 C 88 76 73 86 50 86 C 27 86 12 76 12 58 C 12 40 26 26 50 26 Z" }
+                }
+            }
+            Rectangle {       // brillo
+                x: 24; y: 33; width: 14; height: 6; radius: 3; rotation: -22
+                color: "#55FFFFFF"
+            }
+
+            // tirante de la mochila sobre el hombro
+            Shape {
+                anchors.fill: parent
+                preferredRendererType: Shape.CurveRenderer
+                ShapePath {
+                    fillColor: "transparent"; strokeColor: "#1E8C74"; strokeWidth: 5.5
+                    capStyle: ShapePath.RoundCap
+                    PathSvg { path: "M 73 35 C 84 43 81 56 68 62" }
+                }
+            }
+
+            // pantalla con el prompt >_
+            Rectangle {
+                x: 30; y: 60; width: 38; height: 23; radius: 5
+                color: "#0F2B33"; border.width: 2.2; border.color: "#1E8C74"
+                Text {
+                    textFormat: Text.PlainText
+                    x: 6; anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: -1
+                    text: ">"; color: "#4ADE96"; font.pixelSize: 11; font.bold: true; font.family: MONO
+                }
+                Rectangle {   // cursor
+                    x: 15; y: 14; width: 8; height: 2.2; radius: 1
+                    color: "#4ADE96"; visible: pet.cursorOn
+                }
+            }
+
+            // bracitos que abrazan la pantalla (el derecho saluda)
+            Rectangle {
+                x: 15; y: 62; width: 19; height: 14; radius: 7; rotation: 22
+                color: art.body; border.width: 1; border.color: art.edge
+            }
+            Rectangle {
+                x: 65; y: 62; width: 19; height: 14; radius: 7; rotation: -22
+                color: art.body; border.width: 1; border.color: art.edge
+                transformOrigin: Item.Left
+                SequentialAnimation on rotation {
+                    running: pet.mood === "waiting" || pet.mood === "celebrate"
+                    loops: Animation.Infinite
+                    NumberAnimation { to: -62; duration: 200; easing.type: Easing.OutQuad }
+                    NumberAnimation { to: -34; duration: 200; easing.type: Easing.InOutQuad }
+                }
+            }
+
+            // mejillas
+            Repeater {
+                model: [23, 67]
+                Rectangle { x: modelData; y: 51; width: 10; height: 6; radius: 3; color: "#F59A86"; opacity: 0.8 }
+            }
+
+            // ojos
+            Repeater {
+                model: [38, 62]
+                Item {
+                    x: modelData - 4 + pet.look * 2.5
+                    y: 42 - pet.lookUp * 3
+                    width: 8; height: 11
+                    Rectangle {
+                        visible: !pet.joyful
+                        anchors.centerIn: parent
+                        width: pet.eyeOpen > 1 ? 7.5 : 6.5
+                        height: pet.blink ? 1.6 : Math.max(1.6, 10 * Math.min(pet.eyeOpen, 1.15))
+                        radius: Math.min(width, height) / 2
+                        color: art.ink
+                        Behavior on height { NumberAnimation { duration: 90 } }
+                    }
+                    Shape {          // ojos felices ^ ^
+                        visible: pet.joyful
+                        anchors.fill: parent
+                        preferredRendererType: Shape.CurveRenderer
+                        ShapePath {
+                            fillColor: "transparent"; strokeColor: art.ink; strokeWidth: 2.8
+                            capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
+                            PathSvg { path: "M 0.5 8 Q 4 1 7.5 8" }
+                        }
+                    }
+                }
+            }
+
+            // boca: "w" de gato, abierta con lengua (feliz), masticando, "o" (preocupada) o hablando
+            readonly property bool speaking: pet.talking && !pet.joyful && pet.mood !== "eat"
+            Shape {
+                visible: !pet.joyful && pet.mood !== "eat" && pet.mood !== "worried" && !art.speaking
+                anchors.fill: parent
+                preferredRendererType: Shape.CurveRenderer
+                ShapePath {
+                    fillColor: "transparent"; strokeColor: art.ink; strokeWidth: 1.8
+                    capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
+                    PathSvg { path: "M 45 52 Q 47.5 55.5 50 52 Q 52.5 55.5 55 52" }
+                }
+            }
+            Item {
+                visible: pet.joyful && pet.mood !== "eat"
+                anchors.fill: parent
+                Shape {
+                    anchors.fill: parent
+                    preferredRendererType: Shape.CurveRenderer
+                    ShapePath {
+                        fillColor: "#3A1D1D"; strokeColor: art.ink; strokeWidth: 1.4; joinStyle: ShapePath.RoundJoin
+                        PathSvg { path: "M 44.5 51.5 Q 50 62 55.5 51.5 Q 50 53.5 44.5 51.5 Z" }
+                    }
+                }
+                Rectangle { x: 47.5; y: 55; width: 5; height: 3.2; radius: 1.6; color: "#F68460" }
+            }
+            Rectangle {
+                visible: pet.mood === "eat" || pet.mood === "worried" || art.speaking
+                x: 50 - width / 2; y: 51.5
+                width: pet.mood === "eat" ? 8 : art.speaking ? 6.5 : 4.5
+                height: Math.max(1.6, pet.mood === "eat" ? 7 * pet.chomp : art.speaking ? 5.5 * pet.chomp : 4.5)
+                radius: width / 2
+                color: "#3A1D1D"; border.width: 1; border.color: art.ink
+            }
+
+            // brote en la cabeza (bajo el sombrero o la corona no se ve)
+            Item {
+                visible: pet.accessory !== "hat" && pet.accessory !== "crown"
+                x: 30; y: 4; width: 40; height: 24
+                transformOrigin: Item.Bottom
+                rotation: pet.leaf
+                Shape {
+                    anchors.fill: parent
+                    preferredRendererType: Shape.CurveRenderer
+                    ShapePath {
+                        fillColor: "transparent"; strokeColor: "#3FAE84"; strokeWidth: 2.6; capStyle: ShapePath.RoundCap
+                        PathSvg { path: "M 20 24 Q 19 17 21 11" }
+                    }
+                    ShapePath {
+                        fillColor: "#48BE94"; strokeColor: "transparent"
+                        PathSvg { path: "M 20 13 C 14 3 5 2 1 6 C 5 14 14 16 20 13 Z" }
+                    }
+                    ShapePath {
+                        fillColor: "#57D09D"; strokeColor: "transparent"
+                        PathSvg { path: "M 21 12 C 26 5 33 4 37 7 C 33 13 27 15 21 12 Z" }
+                    }
+                }
+            }
+
+        }
+
+        // accesorio (se mueve con el cuerpo, en los dos diseños)
         Accessory {
             kind: pet.accessory
             scale: pet.s / 100

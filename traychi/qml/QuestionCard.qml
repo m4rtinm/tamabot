@@ -111,16 +111,16 @@ Column {
                     width: qBlock.width
                     height: optCol.implicitHeight + 14
                     radius: 10
-                    color: picked ? "#26D97757" : optMa.containsMouse ? T.fillHover : T.fill
+                    color: picked ? "#2626A96E" : optMa.containsMouse ? T.fillHover : T.fill
                     border.width: 1
-                    border.color: picked ? "#99D97757" : T.stroke
+                    border.color: picked ? "#9926A96E" : T.stroke
                     Behavior on color { ColorAnimation { duration: 120 } }
 
                     Rectangle {      // radio (unica) o casilla (varias)
                         x: 10; y: 9
                         width: 16; height: 16
                         radius: qBlock.multi ? 4 : 8
-                        color: opt.picked ? "#D97757" : "transparent"
+                        color: opt.picked ? "#26A96E" : "transparent"
                         border.width: opt.picked ? 0 : 1.5
                         border.color: T.text3
                         Rectangle {
@@ -170,7 +170,7 @@ Column {
                 width: parent.width; height: 32; radius: 10
                 color: T.code
                 border.width: 1
-                border.color: otherInput.activeFocus ? "#D97757" : T.stroke
+                border.color: otherInput.activeFocus ? "#26A96E" : T.stroke
                 TextInput {
                     id: otherInput
                     anchors { fill: parent; leftMargin: 10; rightMargin: 10 }

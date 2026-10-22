@@ -84,3 +84,19 @@ def test_entradas_malformadas_no_rompen(bad):
     assert set(d) >= {"title", "body", "danger"}
     assert isinstance(activity("Bash", bad), str)
     describe(None, bad)
+
+
+def test_migra_el_nombre_por_defecto_de_la_mascota(tmp_path, monkeypatch):
+    import json
+    monkeypatch.setattr(config, "CONFIG_DIR", tmp_path / "c")
+    monkeypatch.setattr(config, "CACHE_DIR", tmp_path / "k")
+    monkeypatch.setattr(config, "DATA_DIR", tmp_path / "d")
+    monkeypatch.setattr(config, "CONFIG_FILE", tmp_path / "c" / "config.json")
+    monkeypatch.setattr(config.Path, "home", lambda: tmp_path)
+    (tmp_path / "c").mkdir()
+    (tmp_path / "c" / "config.json").write_text(json.dumps({"pet": {"name": "Bit", "color": "#D97757"}}))
+    config.migrate_legacy()
+    assert json.loads((tmp_path / "c" / "config.json").read_text())["pet"] == {"name": "Clawd", "color": "#D97757"}
+    (tmp_path / "c" / "config.json").write_text(json.dumps({"pet": {"name": "Mochi", "color": "#CFE6FF"}}))
+    config.migrate_legacy()                    # lo que eligió el usuario no se toca
+    assert json.loads((tmp_path / "c" / "config.json").read_text())["pet"] == {"name": "Mochi", "color": "#CFE6FF"}

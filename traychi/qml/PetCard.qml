@@ -29,9 +29,9 @@ Column {
                 Rectangle {
                     anchors { right: parent.right; verticalCenter: parent.verticalCenter }
                     width: lvl.implicitWidth + 16; height: 22; radius: 11
-                    color: "#33D97757"
-                    border.width: 1; border.color: "#66D97757"
-                    Text { textFormat: Text.PlainText; id: lvl; anchors.centerIn: parent; text: "Nivel " + pc.st.level; color: "#F0A585"; font.pixelSize: 12; font.weight: Font.Bold }
+                    color: "#3326A96E"
+                    border.width: 1; border.color: "#6626A96E"
+                    Text { textFormat: Text.PlainText; id: lvl; anchors.centerIn: parent; text: "Nivel " + pc.st.level; color: "#7BE8B3"; font.pixelSize: 12; font.weight: Font.Bold }
                 }
             }
             Rectangle {
@@ -42,8 +42,8 @@ Column {
                     width: Math.max(height, parent.width * pc.st.progress)
                     gradient: Gradient {
                         orientation: Gradient.Horizontal
-                        GradientStop { position: 0; color: "#F0A585" }
-                        GradientStop { position: 1; color: "#D97757" }
+                        GradientStop { position: 0; color: "#7BE8B3" }
+                        GradientStop { position: 1; color: "#26A96E" }
                     }
                     Behavior on width { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
                 }

@@ -154,7 +154,7 @@ Rectangle {
                         anchors { left: parent.left; right: sendBtn.left; rightMargin: 6; verticalCenter: parent.verticalCenter }
                         height: 30; radius: 9
                         color: T.code
-                        border.width: 1; border.color: msgInput.activeFocus ? "#D97757" : T.stroke
+                        border.width: 1; border.color: msgInput.activeFocus ? "#26A96E" : T.stroke
                         TextInput {
                             id: msgInput
                             anchors { fill: parent; leftMargin: 10; rightMargin: 10 }

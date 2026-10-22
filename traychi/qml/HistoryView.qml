@@ -34,7 +34,7 @@ Column {
     Rectangle {                // buscador
         width: parent.width; height: 30; radius: 9
         color: T.code
-        border.width: 1; border.color: search.activeFocus ? "#D97757" : T.stroke
+        border.width: 1; border.color: search.activeFocus ? "#26A96E" : T.stroke
         TextInput {
             id: search
             anchors { fill: parent; leftMargin: 10; rightMargin: 10 }

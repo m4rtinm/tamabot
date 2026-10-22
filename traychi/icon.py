@@ -1,15 +1,15 @@
-"""Iconos de la bandeja: la mascota animada, o un anillo simple que gira mientras hay trabajo."""
+"""Iconos de la bandeja: la mascota animada (Clawd o Mochi), o un anillo simple que gira mientras hay trabajo."""
 import math
 
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap
 
-ORANGE = QColor("#D97757")
+ACCENT = QColor("#3DD68C")       # verde de Traychi
 BADGE = QColor("#FF9F0A")
 RAYS = 12
 
 
-def paint_glyph(p, cx, cy, size, angle=0.0, color=ORANGE):
+def paint_glyph(p, cx, cy, size, angle=0.0, color=ACCENT):
     """Icono simple: un anillo; mientras hay trabajo, un arco recorre el anillo."""
     track = QColor(color)
     track.setAlphaF(0.35)
@@ -31,7 +31,7 @@ def tray_icon(angle=0.0, badge=False, dim=False, size=64, muted=False):
     pm.fill(Qt.GlobalColor.transparent)
     p = QPainter(pm)
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
-    color = QColor(ORANGE)
+    color = QColor(ACCENT)
     if dim:
         color.setAlphaF(0.55)
     paint_glyph(p, size / 2, size / 2, size, angle, color)
@@ -126,8 +126,113 @@ def paint_emote(p, emote, phase, size):
         p.drawText(QPointF(48 * u, (14 - phase % 3 * 2) * u), "z")
 
 
-def pet_icon(mood="idle", phase=0, color="#D97757", size=64, muted=False, emote=""):
-    """Mascota en miniatura para la bandeja. phase avanza con el temporizador de animacion."""
+def _mochi_icon(mood="idle", phase=0, color="#F2EAD8", size=64, muted=False, emote=""):
+    """Diseño Mochi (el del banner) en miniatura, con las mismas proporciones que Pet.qml."""
+    pm = QPixmap(size, size)
+    pm.fill(Qt.GlobalColor.transparent)
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    k = size / 100                                   # se dibuja en un espacio de 100x100
+    body = QColor(color)
+    if mood == "sleep":
+        body = body.darker(112)
+    edge = body.darker(118)
+    ink = QColor("#2A2320")
+    dy = 0
+    if mood in ("working", "thinking"):
+        dy = (0, -3, -4, -3)[phase % 4]
+    elif mood in ("happy", "love", "eat"):
+        dy = (0, -9, -13, -9, 0, 0, 0, 0)[phase % 8]
+    elif mood in ("celebrate", "play"):
+        dy = (0, -12, -17, -12, 0, -6)[phase % 6]
+    elif mood == "tired":
+        dy = 3
+
+    def R(x, y, w, h, r, fill, pen=None):
+        p.setPen(pen or Qt.PenStyle.NoPen)
+        p.setBrush(fill)
+        p.drawRoundedRect(QRectF(x * k, (y + dy) * k, w * k, h * k), r * k, r * k)
+
+    def path(points):
+        """points: [('M', x, y), ('C', x1, y1, x2, y2, x, y), ('Q', x1, y1, x, y), ('Z',)]"""
+        pp = QPainterPath()
+        for cmd, *v in points:
+            v = [c * k if i % 2 == 0 else (c + dy) * k for i, c in enumerate(v)]
+            if cmd == "M":
+                pp.moveTo(*v)
+            elif cmd == "C":
+                pp.cubicTo(QPointF(v[0], v[1]), QPointF(v[2], v[3]), QPointF(v[4], v[5]))
+            elif cmd == "Q":
+                pp.quadTo(QPointF(v[0], v[1]), QPointF(v[2], v[3]))
+            elif cmd == "Z":
+                pp.closeSubpath()
+        return pp
+
+    thin = QPen(edge, 1.6 * k)
+    R(20, 34, 75, 50, 22, QColor("#16605D"))                          # mochila
+    R(89, 52, 5.5, 11, 2, QColor("#E47A47"))                          # etiqueta
+    for fx in (21, 59):                                               # patitas
+        R(fx, 79, 20, 12, 6, body, thin)
+    p.setPen(thin)
+    p.setBrush(body)                                                  # cuerpo de mochi
+    p.drawPath(path([("M", 50, 26), ("C", 74, 26, 88, 40, 88, 58), ("C", 88, 76, 73, 86, 50, 86),
+                     ("C", 27, 86, 12, 76, 12, 58), ("C", 12, 40, 26, 26, 50, 26), ("Z",)]))
+    R(30, 60, 38, 23, 5, QColor("#0F2B33"), QPen(QColor("#1E8C74"), 3 * k))   # pantalla
+    R(36, 72, 9, 3, 1.5, QColor("#4ADE96"))                             # cursor
+    R(15, 62, 19, 14, 7, body, thin)                                  # bracitos
+    arm_up = mood in ("waiting", "celebrate") and phase % 2 == 0
+    R(65, 54 if arm_up else 62, 19, 14, 7, body, thin)
+    p.setPen(Qt.PenStyle.NoPen)
+    for cx in (23, 67):                                               # mejillas
+        R(cx, 51, 10, 6, 3, QColor(245, 154, 134, 200))
+    look = (-3, -3, 3, 3)[phase % 4] if mood == "working" else 4 if mood == "bored" else 0
+    up = -4 if mood == "thinking" else 0
+    for ex in (38, 62):                                               # ojos
+        cx = ex + look
+        if mood in JOYFUL:
+            p.setPen(QPen(ink, 4.5 * k, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+            p.setBrush(Qt.BrushStyle.NoBrush)
+            p.drawPath(path([("M", cx - 4, 50), ("Q", cx, 41, cx + 4, 50)]))
+            p.setPen(Qt.PenStyle.NoPen)
+        elif mood == "sleep" or (mood == "idle" and phase % 24 == 0):
+            R(cx - 4, 46, 8, 2.6, 1.3, ink)
+        else:
+            h = {"tired": 5, "bored": 6, "hungry": 8}.get(mood, 12 if mood in ("waiting", "worried") else 10)
+            R(cx - 3.5, 47 - h / 2 + up, 7, h, 3.5, ink)
+    if mood in JOYFUL and mood != "eat":                              # boca abierta y feliz
+        p.setBrush(QColor("#3A1D1D"))
+        p.drawPath(path([("M", 44, 52), ("Q", 50, 62, 56, 52), ("Q", 50, 54, 44, 52), ("Z",)]))
+    elif mood == "eat":
+        R(46, 51, 8, 7 if phase % 2 == 0 else 2.5, 3, QColor("#3A1D1D"))
+    # brote (dormida, caido)
+    p.save()
+    p.translate(50 * k, (27 + dy) * k)
+    p.rotate(32 if mood == "sleep" else (6 if phase % 2 else -6) if mood in JOYFUL else 0)
+    p.translate(-50 * k, -27 * k)
+    p.setPen(QPen(QColor("#3FAE84"), 3.5 * k, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+    p.setBrush(Qt.BrushStyle.NoBrush)
+    stem = QPainterPath(QPointF(50 * k, 27 * k))
+    stem.quadTo(QPointF(49 * k, 20 * k), QPointF(51 * k, 14 * k))
+    p.drawPath(stem)
+    p.setPen(Qt.PenStyle.NoPen)
+    for leaf, col in (([(50, 16), (44, 6), (35, 5), (31, 9), (35, 17), (44, 19)], "#48BE94"),
+                      ([(51, 15), (56, 8), (63, 7), (67, 10), (63, 16), (57, 18)], "#57D09D")):
+        lp = QPainterPath(QPointF(leaf[0][0] * k, leaf[0][1] * k))
+        lp.cubicTo(QPointF(leaf[1][0] * k, leaf[1][1] * k), QPointF(leaf[2][0] * k, leaf[2][1] * k), QPointF(leaf[3][0] * k, leaf[3][1] * k))
+        lp.cubicTo(QPointF(leaf[4][0] * k, leaf[4][1] * k), QPointF(leaf[5][0] * k, leaf[5][1] * k), QPointF(leaf[0][0] * k, leaf[0][1] * k))
+        p.setBrush(QColor(col))
+        p.drawPath(lp)
+    p.restore()
+    if emote:
+        paint_emote(p, emote, phase, size)
+    if muted:
+        paint_muted(p, size)
+    p.end()
+    return QIcon(pm)
+
+
+def _clawd_icon(mood="idle", phase=0, color="#D97757", size=64, muted=False, emote=""):
+    """Clawd (diseño original, el robotito) en miniatura."""
     pm = QPixmap(size, size)
     pm.fill(Qt.GlobalColor.transparent)
     p = QPainter(pm)
@@ -178,3 +283,12 @@ def pet_icon(mood="idle", phase=0, color="#D97757", size=64, muted=False, emote=
         paint_muted(p, size)
     p.end()
     return QIcon(pm)
+
+
+DESIGN_COLORS = {"clawd": "#D97757", "mochi": "#F2EAD8"}
+
+
+def pet_icon(mood="idle", phase=0, color=None, size=64, muted=False, emote="", design="clawd"):
+    """La mascota en miniatura para la bandeja, en su diseño. phase avanza con la animacion."""
+    draw = _mochi_icon if design == "mochi" else _clawd_icon
+    return draw(mood, phase, color or DESIGN_COLORS.get(design, "#D97757"), size, muted, emote)

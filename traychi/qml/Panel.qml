@@ -83,6 +83,7 @@ Window {
                         mood: panel.summary.mood
                         emote: panel.summary.emote
                         talking: typer.running
+                        design: ctrl.pet.design || "clawd"
                         bodyColor: ctrl.pet.color
                         accessory: ctrl.pet.accessory
                         MouseArea {
@@ -229,7 +230,7 @@ Window {
                             Rectangle {
                                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
                                 width: 190; height: 28; radius: 8
-                                color: T.code; border.width: 1; border.color: nameInput.activeFocus ? "#D97757" : T.stroke
+                                color: T.code; border.width: 1; border.color: nameInput.activeFocus ? "#26A96E" : T.stroke
                                 TextInput {
                                     id: nameInput
                                     anchors { fill: parent; leftMargin: 10; rightMargin: 10 }
@@ -242,6 +243,32 @@ Window {
                                 }
                             }
                         }
+                        // --- diseño de la mascota, con vista previa
+                        Item {
+                            width: parent.width; height: 74
+                            Text { textFormat: Text.PlainText; y: 4; text: "Diseño"; color: T.text2; font.pixelSize: 12 }
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 8
+                                Repeater {
+                                    model: [["clawd", "Clawd", "#D97757"], ["mochi", "Mochila", "#F2EAD8"]]
+                                    Rectangle {
+                                        readonly property bool chosen: (ctrl.pet.design || "clawd") === modelData[0]
+                                        width: 96; height: 72; radius: 12
+                                        color: chosen ? "#2626A96E" : designMa.containsMouse ? T.fillHover : T.fill
+                                        border.width: chosen ? 1.5 : 1; border.color: chosen ? "#8826A96E" : T.stroke
+                                        Pet {
+                                            anchors.horizontalCenter: parent.horizontalCenter; y: 2
+                                            s: 50; design: modelData[0]; bodyColor: modelData[2]
+                                            mood: designMa.containsMouse ? "happy" : "idle"
+                                        }
+                                        Text { textFormat: Text.PlainText; anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 5 }
+                                               text: modelData[1]; color: parent.chosen ? T.text : T.text2; font.pixelSize: 12; font.weight: parent.chosen ? Font.DemiBold : Font.Normal }
+                                        MouseArea { id: designMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ctrl.setPet("design", modelData[0]) }
+                                    }
+                                }
+                            }
+                        }
                         Item {
                             width: parent.width; height: 26
                             Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: "Color"; color: T.text2; font.pixelSize: 12 }
@@ -249,7 +276,9 @@ Window {
                                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
                                 spacing: 8
                                 Repeater {
-                                    model: ["#D97757", "#7C9CF5", "#5BC8A8", "#E58FB8", "#B39DDB", "#F2C94C", "#9AA0A6"]
+                                    model: ctrl.pet.design === "mochi"
+                                       ? ["#F2EAD8", "#CDEFD9", "#FFD9C2", "#DCD3F5", "#CFE6FF", "#FFF0B3", "#D9D9DE"]
+                                       : ["#D97757", "#7C9CF5", "#5BC8A8", "#E58FB8", "#B39DDB", "#F2C94C", "#9AA0A6"]
                                     Rectangle {
                                         width: 22; height: 22; radius: 11
                                         color: modelData
@@ -428,7 +457,7 @@ Window {
                                 width: 170; height: 6; radius: 3
                                 color: T.fill
                                 property real value: ctrl.soundVolume / 100
-                                Rectangle { width: parent.width * parent.value; height: parent.height; radius: 3; color: "#D97757" }
+                                Rectangle { width: parent.width * parent.value; height: parent.height; radius: 3; color: "#26A96E" }
                                 Rectangle {
                                     x: volTrack.width * volTrack.value - width / 2; anchors.verticalCenter: parent.verticalCenter
                                     width: 16; height: 16; radius: 8

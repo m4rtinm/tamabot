@@ -29,7 +29,8 @@ DEFAULTS = {
     # "corner": arriba a la derecha | "bubble": burbuja sobre el icono de la bandeja.
     "toast_position": "corner",
     # Mascota: nombre, color, accesorio (emoji) e icono de la bandeja ("pet" | "glyph").
-    "pet": {"name": "Clawd", "color": "#F2EAD8", "accessory": "", "tray": "pet"},
+    # design: "clawd" (el robotito original) o "mochi" (el del banner).
+    "pet": {"name": "Clawd", "design": "clawd", "color": "#D97757", "accessory": "", "tray": "pet"},
     # Sonido elegido por tipo de aviso ("" = sin sonido) y volumen (0-100).
     "sounds": {"permission": "campana", "question": "pregunta", "done": "listo", "fail": "error"},
     "sound_volume": 70,
@@ -80,8 +81,12 @@ def migrate_legacy():
     # el nombre por defecto de la mascota tambien cambio
     try:
         cfg = json.loads(CONFIG_FILE.read_text())
-        if (cfg.get("pet") or {}).get("name") == "Bit":         # el nombre por defecto de Tamabot
-            cfg["pet"]["name"] = "Clawd"
+        pet = dict(cfg.get("pet") or {})
+        before = dict(pet)
+        if pet.get("name") == "Bit":                   # el nombre por defecto de Tamabot
+            pet["name"] = "Clawd"
+        if pet != before:
+            cfg["pet"] = pet
             CONFIG_FILE.write_text(json.dumps(cfg, indent=2) + "\n")
     except (OSError, ValueError):
         pass

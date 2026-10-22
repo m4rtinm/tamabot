@@ -30,11 +30,11 @@ function pad(n) { return n < 10 ? "0" + n : "" + n; }
 function levelColor(p) {
     if (p >= 90) return "#FF453A";
     if (p >= 70) return "#FF9F0A";
-    return "#D97757";
+    return "#26A96E";
 }
 
 function stateColor(s) {
-    return { working: "#D97757", waiting: "#FF9F0A", done: "#30D158", idle: "#8E8E93" }[s] || "#8E8E93";
+    return { working: "#64D2FF", waiting: "#FF9F0A", done: "#30D158", idle: "#8E8E93" }[s] || "#8E8E93";
 }
 
 function stateLabel(s) {
