@@ -2,12 +2,14 @@
 # Captura de prueba: fondo de colores + app con el panel abierto + eventos de demo.
 cd "$(dirname "$0")/.."
 OUT=${1:-/tmp}
-pkill -f "tools/backdrop.py"; pkill -f "m traychi"; sleep 0.5
+# solo se cierran las demos: tu Traychi real sigue abierto (la demo usa su propio socket)
+pkill -f "tools/backdrop.py"; pkill -f "m traychi --demo"; sleep 0.5
+DEMO_RT=$(mktemp -d); chmod 700 "$DEMO_RT"
 timeout 25 .venv/bin/python tools/backdrop.py >/dev/null 2>&1 &
 sleep 2
 true
 sleep 0.3
-timeout 22 .venv/bin/python -m traychi --demo $ARGS > "$OUT/app.log" 2>&1 &
+XDG_RUNTIME_DIR="$DEMO_RT" timeout 22 .venv/bin/python -m traychi --demo $ARGS > "$OUT/app.log" 2>&1 &
 sleep 1
 true
 sleep ${DELAY:-2.5}

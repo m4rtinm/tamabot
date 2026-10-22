@@ -471,12 +471,41 @@ def gnome_shortcuts(add=True):
 
 
 # --- arranque / parada -------------------------------------------------------------------
+APP_MODULES = ("traychi", "tamabot", "claudetray")      # el actual y los nombres anteriores
+
+
+def running_instances(home=HOME):
+    """PIDs de la app (o de una version anterior) instalada en ESTE home.
+
+    Solo cuenta procesos cuyo Python vive dentro de `home`: asi, un instalador que corre en otro
+    HOME (por ejemplo, el de los tests) nunca cierra la app del usuario.
+    """
+    pids = []
+    for proc in Path("/proc").iterdir():
+        if not proc.name.isdigit():
+            continue
+        try:
+            if proc.stat().st_uid != os.getuid():
+                continue
+            argv = (proc / "cmdline").read_bytes().split(b"\0")
+        except OSError:
+            continue
+        argv = [a.decode(errors="replace") for a in argv if a]
+        if (len(argv) >= 3 and argv[1] == "-m" and argv[2] in APP_MODULES
+                and Path(argv[0]).is_absolute() and str(Path(argv[0])).startswith(str(home) + "/")):
+            pids.append(int(proc.name))
+    return pids
+
+
 def stop_running():
-    """Detiene Traychi si esta abierto (tambien una instalacion antigua, desde otra carpeta)."""
-    if not shutil.which("pkill"):
-        return
-    r = run("pkill", "-u", str(os.getuid()), "-f", r"python[0-9.]* -m (traychi|tamabot|claudetray)( |$)")
-    if r.returncode == 0:
+    """Detiene la app de este usuario si esta abierta (tambien una instalacion con el nombre anterior)."""
+    pids = running_instances()
+    for pid in pids:
+        try:
+            os.kill(pid, 15)
+        except OSError:
+            pass
+    if pids:
         time.sleep(1)
 
 

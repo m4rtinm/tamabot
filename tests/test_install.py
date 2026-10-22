@@ -2,6 +2,7 @@
 import json
 import os
 import subprocess
+import time
 import sys
 from pathlib import Path
 
@@ -125,3 +126,29 @@ def test_actualizar_desde_tamabot(tmp_path):
     assert not any("tamabot_" in c for c in cmds) and "traychi_statusline.py" in data["statusLine"]["command"]
     assert (tmp_path / ".local" / "share" / "traychi" / "history.jsonl").exists()
     assert not (tmp_path / ".local" / "bin" / "tamabot").exists()
+
+
+def test_el_instalador_solo_cierra_la_app_de_su_propio_home(tmp_path):
+    """Un instalador en otro HOME (como el de estos tests) no debe cerrar la app del usuario."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("installer_test", ROOT / "install.py")
+    inst = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(inst)
+    fake = tmp_path / "home"
+    py = fake / ".local" / "share" / "traychi" / "venv" / "bin" / "python"
+    py.parent.mkdir(parents=True)
+    py.symlink_to(sys.executable)
+    fakepkg = tmp_path / "pkg" / "traychi"                     # un "traychi" de mentira que solo espera
+    fakepkg.mkdir(parents=True)
+    (fakepkg / "__init__.py").write_text("")
+    (fakepkg / "__main__.py").write_text("import time; time.sleep(5)")
+    mine = subprocess.Popen([str(py), "-m", "traychi"], cwd=fakepkg.parent)
+    other = subprocess.Popen([sys.executable, "-m", "traychi"], cwd=fakepkg.parent)   # Python fuera de ese home
+    try:
+        time.sleep(0.5)
+        found = inst.running_instances(fake)
+        assert mine.pid in found
+        assert other.pid not in found
+    finally:
+        mine.kill()
+        other.kill()
