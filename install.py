@@ -213,9 +213,9 @@ def install_hooks(app_dir):
     hooks = strip_ours(data.get("hooks", {}))
     hooks.setdefault("PermissionRequest", []).append(
         {"matcher": "*", "hooks": [{"type": "command", "command": hook, "timeout": 600}]})
-    # preguntas con opciones: PreToolUse sincrono solo para AskUserQuestion
-    hooks.setdefault("PreToolUse", []).append(
-        {"matcher": "AskUserQuestion", "hooks": [{"type": "command", "command": hook + " --ask", "timeout": 600}]})
+    # Las preguntas con opciones (AskUserQuestion) llegan por este mismo PermissionRequest: asi se ven
+    # a la vez en la terminal y en Traychi. (Antes habia un PreToolUse sincrono que las ocultaba de la
+    # terminal mientras esperaba; strip_ours lo quita al actualizar.)
     for ev in ASYNC_EVENTS:
         hooks.setdefault(ev, []).append({"hooks": [{"type": "command", "command": hook, "async": True, "timeout": 5}]})
     data["hooks"] = hooks

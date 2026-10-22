@@ -512,11 +512,13 @@ class Controller(QObject):
             self.bridge.reply(cid, {})
         elif kind == "permission":
             if data.get("tool_name") == "AskUserQuestion":
-                self.bridge.reply(cid, {"decision": None})   # las preguntas van por su propio hook
+                # Por PermissionRequest la pregunta se ve a la vez en la terminal y en Traychi:
+                # gana la primera respuesta (si contestas en la terminal, Claude cierra el hook).
+                self._new_question(cid, data, via="permission")
             else:
                 self._new_request(cid, data)
         elif kind == "question":
-            self._new_question(cid, data)
+            self._new_question(cid, data, via="pretooluse")   # hook --ask de versiones anteriores
 
     def _new_request(self, cid, data):
         sid = data.get("session_id", "")
@@ -544,14 +546,14 @@ class Controller(QObject):
             self._show_toast(item, "permission")
         self._ping("permission")
 
-    def _new_question(self, cid, data):
+    def _new_question(self, cid, data, via="permission"):
         """AskUserQuestion: Claude pregunta con opciones y la respuesta se elige en la app."""
         sid = data.get("session_id", "")
         self.tracker.on_event(data)
         sess = self.tracker.s.get(sid, {})
         tool_input = data.get("tool_input") if isinstance(data.get("tool_input"), dict) else {}
         questions = [q for q in tool_input.get("questions") or [] if isinstance(q, dict) and q.get("question")]
-        if not questions or self._muted():     # silenciado: la pregunta va directo a la terminal
+        if not questions:
             self.bridge.reply(cid, {})
             return
         item = {
@@ -563,9 +565,9 @@ class Controller(QObject):
             "created": now_ms(), "timeout": int(self.cfg.get("approval_timeout", 540)),
             "questions": questions,
         }
-        self._req[cid] = {"item": item, "suggestions": [], "input": data.get("tool_input")}
+        self._req[cid] = {"item": item, "suggestions": [], "input": data.get("tool_input"), "via": via}
         self._publish()
-        if not self._muted():
+        if not self._muted():            # silenciado: queda en el panel (y en la terminal)
             self._show_toast(item, "question")
         self._ping("question")
 
@@ -830,7 +832,11 @@ class Controller(QObject):
             return
         answers = {str(k): str(v) for k, v in answers.items()}
         summary = " · ".join(f"{q}: {a}" for q, a in answers.items())
-        self._resolve(cid, None, outcome="answered", payload={"answers": answers}, detail=summary[:300])
+        if req.get("via") == "pretooluse":
+            payload = {"answers": answers}
+        else:   # PermissionRequest: permitir con las preguntas originales + las respuestas
+            payload = {"decision": {"behavior": "allow", "updatedInput": {**(req["input"] or {}), "answers": answers}}}
+        self._resolve(cid, None, outcome="answered", payload=payload, detail=summary[:300])
 
     @Slot(str)
     def toTerminal(self, cid):

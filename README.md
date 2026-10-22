@@ -232,7 +232,8 @@ uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python PySide6-
 .venv/bin/python -m pytest                       # tests
 .venv/bin/python -m traychi --demo               # datos de ejemplo (también --bubble, --pet, --question, --usage, --history)
 tools/test_distros.sh                            # el instalador en Ubuntu, Debian, Fedora y Arch (Docker)
-tools/e2e_ask.sh /ruta/salida                    # prueba real de preguntas con Claude Code
+tools/e2e_ask_both.sh /ruta/salida               # preguntas: se ven en la terminal y se responden por el hook
+tools/e2e_ask_real.sh /ruta/salida               # lo mismo con Traychi instalado, contestando en la terminal
 tools/docs_shots.sh                              # regenera las capturas
 python3 tools/make_illustrations.py              # regenera las ilustraciones de docs/svg
 .venv/bin/python tools/pet_showcase.py           # regenera docs/img/mascotas.png

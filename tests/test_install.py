@@ -32,10 +32,11 @@ def test_instalar_dos_veces_y_desinstalar(tmp_path):
     assert "/x/mi_hook.sh" in cmds["PreToolUse"]
     for ev in ("PermissionRequest", "Stop", "SessionStart", "StopFailure"):
         assert sum("traychi_hook.py" in c for c in cmds[ev]) == 1
-    # PreToolUse: uno asincrono para todo + uno sincrono para las preguntas
-    assert sum("traychi_hook.py" in c for c in cmds["PreToolUse"]) == 2
-    ask = [g for g in data["hooks"]["PreToolUse"] if g.get("matcher") == "AskUserQuestion"]
-    assert ask and ask[0]["hooks"][0]["command"].endswith("--ask") and not ask[0]["hooks"][0].get("async")
+    # PreToolUse: solo el asincrono. Las preguntas van por PermissionRequest, para que la terminal
+    # tambien las muestre; un PreToolUse sincrono las ocultaba mientras esperaba.
+    assert sum("traychi_hook.py" in c for c in cmds["PreToolUse"]) == 1
+    assert not any(g.get("matcher") == "AskUserQuestion" for g in data["hooks"]["PreToolUse"])
+    assert not any("--ask" in c for c in sum(cmds.values(), []))
     assert "traychi_statusline.py" in data["statusLine"]["command"]
     cfg = json.loads((tmp_path / ".config" / "traychi" / "config.json").read_text())
     assert cfg["statusline_chain"] == "/x/mi_status.sh"
