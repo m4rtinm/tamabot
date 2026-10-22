@@ -14,7 +14,8 @@ import socket
 import sys
 import uuid
 
-RUNTIME = os.environ.get("XDG_RUNTIME_DIR") or f"/tmp/claude-tray-{os.getuid()}"
+_XDG = os.environ.get("XDG_RUNTIME_DIR")
+RUNTIME = _XDG if _XDG and os.path.isdir(_XDG) else f"/tmp/claude-tray-{os.getuid()}"   # igual que la app
 SOCK = os.path.join(RUNTIME, "claude-tray.sock")
 CONFIG = os.path.join(os.path.expanduser("~"), ".config", "claude-tray", "config.json")
 
@@ -27,7 +28,20 @@ def approval_timeout():
         return 540.0
 
 
+def runtime_is_safe():
+    """Sin XDG_RUNTIME_DIR el socket vive en /tmp: solo se usa si la carpeta es nuestra y privada."""
+    if RUNTIME == _XDG:
+        return True
+    try:
+        st = os.lstat(RUNTIME)
+    except OSError:
+        return False
+    return os.path.isdir(RUNTIME) and not os.path.islink(RUNTIME) and st.st_uid == os.getuid() and not st.st_mode & 0o077
+
+
 def main():
+    if not runtime_is_safe():
+        return
     try:
         data = json.loads(sys.stdin.read() or "{}")
     except ValueError:

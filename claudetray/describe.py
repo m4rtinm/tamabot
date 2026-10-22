@@ -43,9 +43,15 @@ TOOL_TITLES = {
 MAX_LINES = 14
 
 
+def _s(v):
+    """Cualquier valor como texto (las entradas vienen de afuera y pueden ser null o numeros)."""
+    return "" if v is None else v if isinstance(v, str) else str(v)
+
+
 def _short_path(path, cwd):
     if not path:
         return ""
+    path = _s(path)
     if cwd and path.startswith(cwd.rstrip("/") + "/"):
         return path[len(cwd.rstrip("/")) + 1:]
     home = os.path.expanduser("~")
@@ -53,30 +59,37 @@ def _short_path(path, cwd):
 
 
 def _clip(text, lines=MAX_LINES):
-    rows = text.splitlines() or [""]
+    rows = _s(text).splitlines() or [""]
     if len(rows) > lines:
         rows = rows[:lines] + [f"… (+{len(rows) - lines} líneas)"]
     return "\n".join(r if len(r) < 400 else r[:400] + "…" for r in rows)
 
 
 def _diff(old, new):
-    rows = [f"- {l}" for l in (old or "").splitlines()] + [f"+ {l}" for l in (new or "").splitlines()]
+    rows = [f"- {l}" for l in _s(old).splitlines()] + [f"+ {l}" for l in _s(new).splitlines()]
     return _clip("\n".join(rows))
+
+
+def _as_dict(inp):
+    if isinstance(inp, dict):
+        return inp
+    return {} if inp is None else {"valor": inp}
 
 
 def describe(tool, inp, cwd=""):
     """Devuelve dict con title, subtitle, body, bodyKind ('code'|'diff'|'text'), danger."""
-    inp = inp or {}
+    inp = _as_dict(inp)
+    tool = tool if isinstance(tool, str) else str(tool)
     title = TOOL_TITLES.get(tool, tool)
     subtitle, body, kind = "", "", "code"
 
     if tool == "Bash":
         subtitle = inp.get("description") or ""
-        body = _clip(inp.get("command", ""))
+        body = _clip(_s(inp.get("command")))
     elif tool in ("Edit", "MultiEdit"):
         subtitle = _short_path(inp.get("file_path"), cwd)
         if tool == "MultiEdit":
-            parts = [_diff(e.get("old_string"), e.get("new_string")) for e in inp.get("edits", [])]
+            parts = [_diff(e.get("old_string"), e.get("new_string")) for e in (inp.get("edits") or []) if isinstance(e, dict)]
             body = _clip("\n".join(parts))
         else:
             body = _diff(inp.get("old_string"), inp.get("new_string"))
@@ -106,7 +119,7 @@ def describe(tool, inp, cwd=""):
     else:
         body = _clip(json.dumps(inp, indent=2, ensure_ascii=False))
 
-    scan = inp.get("command", "") if tool == "Bash" else ""
+    scan = _s(inp.get("command")) if tool == "Bash" else ""
     return {
         "title": title,
         "subtitle": subtitle,
@@ -118,9 +131,10 @@ def describe(tool, inp, cwd=""):
 
 def activity(tool, inp, cwd=""):
     """Linea corta de 'que esta haciendo' para la lista de sesiones."""
-    inp = inp or {}
+    inp = _as_dict(inp)
+    tool = tool if isinstance(tool, str) else str(tool)
     if tool == "Bash":
-        return "$ " + (inp.get("command", "").splitlines() or [""])[0][:120]
+        return "$ " + (_s(inp.get("command")).splitlines() or [""])[0][:120]
     if tool in ("Edit", "MultiEdit", "Write", "Read", "NotebookEdit"):
         verb = {"Read": "Leyendo", "Write": "Creando"}.get(tool, "Editando")
         return f"{verb} {_short_path(inp.get('file_path') or inp.get('notebook_path'), cwd)}"

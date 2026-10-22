@@ -14,6 +14,9 @@ def another_instance_running(path):
     return alive
 
 
+MAX_BUFFER = 4 * 1024 * 1024     # un mensaje de hook nunca deberia acercarse a esto
+
+
 class Bridge(QObject):
     message = Signal(object, str)   # (mensaje, id de conexion)
     closed = Signal(str)            # la conexion se cerro (p. ej. Claude mato el hook)
@@ -43,6 +46,9 @@ class Bridge(QObject):
         if sock is None:
             return
         self._bufs[cid] += bytes(sock.readAll())
+        if len(self._bufs[cid]) > MAX_BUFFER and b"\n" not in self._bufs[cid]:
+            sock.abort()                  # cliente que manda datos sin fin: se corta
+            return
         while b"\n" in self._bufs[cid]:
             line, self._bufs[cid] = self._bufs[cid].split(b"\n", 1)
             try:

@@ -13,7 +13,8 @@ import subprocess
 import sys
 import time
 
-RUNTIME = os.environ.get("XDG_RUNTIME_DIR") or f"/tmp/claude-tray-{os.getuid()}"
+_XDG = os.environ.get("XDG_RUNTIME_DIR")
+RUNTIME = _XDG if _XDG and os.path.isdir(_XDG) else f"/tmp/claude-tray-{os.getuid()}"   # igual que la app
 SOCK = os.path.join(RUNTIME, "claude-tray.sock")
 CONFIG = os.path.join(os.path.expanduser("~"), ".config", "claude-tray", "config.json")
 
@@ -22,6 +23,13 @@ ORANGE, AMBER, RED = "\033[38;5;173m", "\033[38;5;214m", "\033[38;5;203m"
 
 
 def forward(raw):
+    if RUNTIME != _XDG:
+        try:
+            st = os.lstat(RUNTIME)
+            if os.path.islink(RUNTIME) or st.st_uid != os.getuid() or st.st_mode & 0o077:
+                return
+        except OSError:
+            return
     try:
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.settimeout(0.3)

@@ -1,12 +1,15 @@
+import logging
+import logging.handlers
 import os
 import shutil
 import subprocess
 import sys
 import threading
 import time
+import traceback
 from pathlib import Path
 
-from PySide6.QtCore import Property, QObject, QPoint, QTimer, QUrl, Signal, Slot
+from PySide6.QtCore import Property, QObject, QPoint, QTimer, QUrl, Signal, Slot, qInstallMessageHandler
 from PySide6.QtGui import QAction, QActionGroup, QCursor, QFontDatabase, QGuiApplication, QFont
 from PySide6.QtQml import QQmlApplicationEngine, QQmlComponent
 from PySide6.QtQuick import QQuickWindow
@@ -33,6 +36,8 @@ TAIL = 10            # alto del pico de la burbuja
 MAX_TOASTS = 4
 XCB_TYPE_NOTIFICATION = 0x000800   # QXcbWindow::Notification
 XCB_TYPE_POPUP_MENU = 0x000200
+MAX_PENDING = 30                   # mas solicitudes abiertas que esto: se devuelven a la terminal
+log = logging.getLogger("claude-tray")
 SOUND = "/usr/share/sounds/freedesktop/stereo/message-new-instant.oga"
 
 
@@ -296,8 +301,8 @@ class Controller(QObject):
         def run():
             try:
                 self.daily.refresh()
-            except Exception as exc:          # un registro raro no debe tumbar la app
-                print("No se pudo leer el consumo diario:", exc, file=sys.stderr)
+            except Exception:                 # un registro raro no debe tumbar la app
+                log.error("No se pudo leer el consumo diario:\n%s", traceback.format_exc())
             self._dailyDone.emit()
 
         threading.Thread(target=run, daemon=True).start()
@@ -400,7 +405,21 @@ class Controller(QObject):
 
     # --- mensajes de los hooks ---------------------------------------------
     def _on_message(self, msg, cid):
+        """Un mensaje raro nunca debe tumbar la app ni dejar a Claude esperando."""
+        try:
+            self._handle_message(msg, cid)
+        except Exception:
+            log.error("Error procesando un mensaje del hook:\n%s", traceback.format_exc())
+            if isinstance(msg, dict) and msg.get("kind") in ("permission", "question"):
+                self._req.pop(cid, None)
+                self.bridge.reply(cid, {})         # sin decision: Claude pregunta en la terminal
+
+    def _handle_message(self, msg, cid):
+        if not isinstance(msg, dict):
+            return
         kind, data = msg.get("kind"), msg.get("data") or {}
+        if not isinstance(data, dict):
+            return
         if kind == "status":
             self.tracker.on_status(data)
             if data.get("rate_limits"):
@@ -432,6 +451,9 @@ class Controller(QObject):
             self._publish()
             if notice and self.cfg.get("notify_done") and not self._muted() and not self._toast_for_session(notice["sid"]):
                 self._show_info(notice)
+        elif kind in ("permission", "question") and len(self._req) >= MAX_PENDING:
+            log.warning("Demasiadas solicitudes abiertas; esta se devuelve a la terminal")
+            self.bridge.reply(cid, {})
         elif kind == "permission":
             if data.get("tool_name") == "AskUserQuestion":
                 self.bridge.reply(cid, {"decision": None})   # las preguntas van por su propio hook
@@ -471,7 +493,8 @@ class Controller(QObject):
         sid = data.get("session_id", "")
         self.tracker.on_event(data)
         sess = self.tracker.s.get(sid, {})
-        questions = (data.get("tool_input") or {}).get("questions") or []
+        tool_input = data.get("tool_input") if isinstance(data.get("tool_input"), dict) else {}
+        questions = [q for q in tool_input.get("questions") or [] if isinstance(q, dict) and q.get("question")]
         if not questions or self._muted():     # silenciado: la pregunta va directo a la terminal
             self.bridge.reply(cid, {})
             return
@@ -569,7 +592,7 @@ class Controller(QObject):
         win = self._toast_comp.createWithInitialProperties(
             {"item": item, "mode": mode, "bubble": self._toast_position() == "bubble"})
         if win is None:
-            print("\n".join(e.toString() for e in self._toast_comp.errors()), file=sys.stderr)
+            log.error("No se pudo crear la notificación: %s", "; ".join(e.toString() for e in self._toast_comp.errors()))
             return
         # Tipo Notification en X11: KWin no la esconde aunque la app no este activa
         # (con Qt.Tool a secas seria "utility" y se ocultaria).
@@ -808,7 +831,27 @@ class Controller(QObject):
     historyStats = Property("QVariantMap", lambda self: self.history.stats(), notify=historyChanged)
 
 
+def setup_logging():
+    """Log en ~/.cache/claude-tray/claude-tray.log (rotativo), con errores de Python y de QML."""
+    path = config.CACHE_DIR / "claude-tray.log"
+    handler = logging.handlers.RotatingFileHandler(path, maxBytes=1_000_000, backupCount=2, encoding="utf-8")
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+    root = logging.getLogger()
+    root.addHandler(handler)
+    root.addHandler(logging.StreamHandler())
+    root.setLevel(logging.INFO)
+    sys.excepthook = lambda t, v, tb: log.error("Error no controlado:\n%s", "".join(traceback.format_exception(t, v, tb)))
+
+    def qt_messages(mode, ctx, message):
+        if "propertyCache" not in message:      # ruido conocido de Qt
+            log.warning("Qt: %s", message)
+    qInstallMessageHandler(qt_messages)
+
+
 def main():
+    os.umask(0o077)                      # todo lo que crea la app queda solo para su dueño
+    config.private_dirs()
+    setup_logging()
     os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
     os.environ.setdefault("QT_QUICK_CONTROLS_STYLE", "Basic")
     QQuickWindow.setDefaultAlphaBuffer(True)
@@ -820,6 +863,11 @@ def main():
         font = QFont("Inter")
         font.setPixelSize(13)
         app.setFont(font)
+    try:
+        config.secure_runtime()
+    except RuntimeError as exc:
+        log.error("%s", exc)
+        return 1
     if another_instance_running(config.SOCKET_PATH):
         print("Claude Tray ya está abierto.")
         return 0
